@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Демо-тест · SMART_CLASS{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <h1>Демо-тест двух ролей</h1>
+    <p>Откройте обе ссылки в разных вкладках: учитель видит события, ученик работает в учебнике.</p>
+  </div>
+</section>
+
+<div class="grid">
+  <article class="panel">
+    <h2>Ссылка учителя</h2>
+    <p>Live dashboard урока, список событий и кнопка завершения.</p>
+    <a class="button" href="{{ url_for('demo.teacher_live', lesson_id=lesson.id) }}" target="_blank">Открыть учителя</a>
+  </article>
+  <article class="panel">
+    <h2>Ссылка ученика</h2>
+    <p>Полноценный динамический учебник с отправкой событий активности.</p>
+    <a class="button" href="{{ url_for('demo.student_book', lesson_id=lesson.id, page_index=0) }}" target="_blank">Открыть ученика</a>
+  </article>
+</div>
+{% endblock %}

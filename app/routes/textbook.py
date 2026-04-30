@@ -2,7 +2,8 @@ import json
 from pathlib import Path
 
 import markdown
-from flask import Blueprint, abort, current_app, render_template
+from flask import Blueprint, abort, current_app, render_template, url_for
+from flask_login import current_user
 
 from app.models import Lesson
 from app.routes.guards import roles_required
@@ -22,6 +23,7 @@ def page(lesson_id, page_index):
     return render_template(
         "textbook/book.html",
         lesson=lesson,
+        student_name=current_user.name,
         page=item,
         page_index=page_index,
         total=len(pages),
@@ -29,6 +31,9 @@ def page(lesson_id, page_index):
         content=html,
         prev_index=page_index - 1 if page_index > 0 else None,
         next_index=page_index + 1 if page_index < len(pages) - 1 else None,
+        demo_mode=False,
+        activity_url=url_for("events.textbook_activity", lesson_id=lesson.id),
+        status_url=url_for("lessons.status", lesson_id=lesson.id),
     )
 
 
@@ -56,4 +61,3 @@ def render_markdown(path):
         return "<h1>Страница учебника не найдена</h1>"
     text = path.read_text(encoding="utf-8")
     return markdown.markdown(text, extensions=["tables", "fenced_code"])
-

@@ -4,31 +4,89 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/book.css') }}">
 {% endblock %}
 {% block content %}
-<section class="book-layout" data-lesson-id="{{ lesson.id }}" data-page-index="{{ page_index }}">
-  <aside class="book-toc">
-    <h2>Учебник</h2>
-    <ol>
+{% macro book_url(i) -%}
+  {%- if demo_mode -%}
+    {{ url_for('demo.student_book', lesson_id=lesson.id, page_index=i) }}
+  {%- else -%}
+    {{ url_for('textbook.page', lesson_id=lesson.id, page_index=i) }}
+  {%- endif -%}
+{%- endmacro %}
+
+<section
+  class="book-layout"
+  data-lesson-id="{{ lesson.id }}"
+  data-page-index="{{ page_index }}"
+  data-activity-url="{{ activity_url }}"
+  data-status-url="{{ status_url }}"
+>
+  <aside class="book-sidebar">
+    <div class="book-brand">
+      <div class="book-mark">M6</div>
+      <div>
+        <strong>Математика 6</strong>
+        <span>{{ lesson.title }}</span>
+      </div>
+    </div>
+    <div class="book-student">{{ student_name|default("Ученик") }}</div>
+    <ol class="book-toc">
       {% for item in pages %}
         <li class="{% if loop.index0 == page_index %}active{% endif %}">
-          <a href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=loop.index0) }}">{{ item.title }}</a>
+          <a href="{{ book_url(loop.index0) }}">
+            <span>{{ loop.index }}</span>
+            <strong>{{ item.title }}</strong>
+          </a>
         </li>
       {% endfor %}
     </ol>
   </aside>
+
   <article class="book-page">
-    <div class="book-meta">{{ page.chapter }} · страница {{ page_index + 1 }} из {{ total }}</div>
-    <h1>{{ page.title }}</h1>
+    <header class="book-page-head">
+      <div>
+        <div class="book-meta">{{ page.chapter }} · страница {{ page_index + 1 }} из {{ total }}</div>
+        <h1>{{ page.title }}</h1>
+      </div>
+      <button class="book-help" type="button" data-help-page>Помощник</button>
+    </header>
+
+    <div class="book-progress" aria-hidden="true">
+      <span style="width: {{ ((page_index + 1) / total * 100)|round(1) }}%"></span>
+    </div>
+
     <div class="book-content">{{ content|safe }}</div>
+
     <nav class="book-nav">
       {% if prev_index is not none %}
-        <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=prev_index) }}">Назад</a>
+        <a class="button secondary" href="{{ book_url(prev_index) }}">Назад</a>
+      {% else %}
+        <span></span>
       {% endif %}
       {% if next_index is not none %}
-        <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=next_index) }}">Дальше</a>
+        <a class="button" href="{{ book_url(next_index) }}">Дальше</a>
       {% endif %}
     </nav>
   </article>
 </section>
-<script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
-{% endblock %}
 
+<dialog class="ai-dialog" id="aiDialog">
+  <form method="dialog" class="ai-box">
+    <header>
+      <div>
+        <strong id="aiTitle">Учебный помощник</strong>
+        <span id="aiSubtitle">Подсказывает ход мысли, но не решает за ученика.</span>
+      </div>
+      <button value="close" aria-label="Закрыть">×</button>
+    </header>
+    <div class="ai-task" id="aiTask"></div>
+    <div class="ai-answer" id="aiAnswer">Выберите задание или нажмите “Помощник”.</div>
+    <textarea id="aiQuestion" rows="3" placeholder="Напиши, что именно непонятно"></textarea>
+    <footer>
+      <button type="button" data-ai-action="explain">Объясни проще</button>
+      <button type="button" data-ai-action="check">Проверь мысль</button>
+    </footer>
+  </form>
+</dialog>
+
+<script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/book.js') }}"></script>
+{% endblock %}

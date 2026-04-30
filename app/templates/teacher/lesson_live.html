@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Живой урок · SMART_CLASS{% endblock %}
 {% block content %}
-<section class="lesson-shell" data-lesson-id="{{ lesson.id }}">
+{% set live_events_url = events_url|default(url_for('events.list_events', lesson_id=lesson.id)) %}
+{% set live_finish_url = finish_url|default(url_for('lessons.finish', lesson_id=lesson.id)) %}
+<section class="lesson-shell" data-lesson-id="{{ lesson.id }}" data-events-url="{{ live_events_url }}">
   <div>
     <h1>{{ lesson.title }}</h1>
     <p>{{ lesson.subject }} · статус: {{ lesson.status }}</p>
@@ -9,7 +11,7 @@
   <div class="actions">
     <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник</a>
     {% if lesson.status == "active" %}
-      <form method="post" action="{{ url_for('lessons.finish', lesson_id=lesson.id) }}">
+      <form method="post" action="{{ live_finish_url }}">
         <button type="submit">Завершить урок</button>
       </form>
     {% else %}
@@ -42,4 +44,3 @@
 </section>
 <script src="{{ url_for('static', filename='js/lesson_teacher.js') }}"></script>
 {% endblock %}
-

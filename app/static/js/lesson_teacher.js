@@ -4,8 +4,7 @@
   if (!shell || !list) return;
 
   async function refreshEvents() {
-    const lessonId = shell.dataset.lessonId;
-    const response = await fetch(`/api/lessons/${lessonId}/events`);
+    const response = await fetch(shell.dataset.eventsUrl);
     const events = await response.json();
     list.innerHTML = events.map((event) => {
       const time = new Date(event.created_at).toLocaleTimeString();
@@ -16,4 +15,3 @@
 
   setInterval(refreshEvents, 3000);
 })();
-

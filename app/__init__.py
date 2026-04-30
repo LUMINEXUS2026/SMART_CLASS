@@ -26,6 +26,8 @@ def create_app(config_class=Config):
     from .routes.lessons import lessons_bp
     from .routes.parent import parent_bp
     from .routes.admin import admin_bp
+    from .routes.ai import ai_bp
+    from .routes.demo import demo_bp
     from .routes.reports import reports_bp
     from .routes.student import student_bp
     from .routes.teacher import teacher_bp
@@ -36,6 +38,8 @@ def create_app(config_class=Config):
     app.register_blueprint(lessons_bp)
     app.register_blueprint(parent_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(ai_bp)
+    app.register_blueprint(demo_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(teacher_bp)

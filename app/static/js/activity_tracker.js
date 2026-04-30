@@ -4,11 +4,13 @@
 
   const lessonId = root.dataset.lessonId;
   const pageIndex = Number(root.dataset.pageIndex || 0);
+  const activityUrl = root.dataset.activityUrl || `/api/lessons/${lessonId}/textbook-activity`;
+  const statusUrl = root.dataset.statusUrl || `/lessons/${lessonId}/status`;
   let openedAt = Date.now();
 
   async function sendActivity(action, payload = {}) {
     const durationSec = Math.max(0, Math.round((Date.now() - openedAt) / 1000));
-    await fetch(`/api/lessons/${lessonId}/textbook-activity`, {
+    await fetch(activityUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -33,7 +35,7 @@
 
   window.addEventListener("beforeunload", () => {
     navigator.sendBeacon?.(
-      `/api/lessons/${lessonId}/textbook-activity`,
+      activityUrl,
       new Blob([JSON.stringify({
         action: "page_closed",
         page_index: pageIndex,
@@ -47,5 +49,22 @@
       sendActivity("help_requested");
     }
   });
-})();
 
+  async function checkLessonStatus() {
+    const response = await fetch(statusUrl);
+    const data = await response.json();
+    if (data.status !== "active") {
+      document.body.innerHTML = `
+        <main class="page">
+          <section class="panel">
+            <h1>Урок завершён</h1>
+            <p>Учитель завершил урок. Учебник закрыт для этой сессии.</p>
+            <a class="button" href="/student/dashboard">Вернуться</a>
+          </section>
+        </main>
+      `;
+    }
+  }
+
+  setInterval(checkLessonStatus, 4000);
+})();
