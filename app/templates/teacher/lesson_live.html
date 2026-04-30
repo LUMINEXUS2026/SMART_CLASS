@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Живой урок · SMART_CLASS{% endblock %}
+{% block content %}
+<section class="lesson-shell" data-lesson-id="{{ lesson.id }}">
+  <div>
+    <h1>{{ lesson.title }}</h1>
+    <p>{{ lesson.subject }} · статус: {{ lesson.status }}</p>
+  </div>
+  <div class="actions">
+    <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник</a>
+    {% if lesson.status == "active" %}
+      <form method="post" action="{{ url_for('lessons.finish', lesson_id=lesson.id) }}">
+        <button type="submit">Завершить урок</button>
+      </form>
+    {% else %}
+      <a class="button" href="{{ url_for('reports.lesson_report', lesson_id=lesson.id) }}">Отчёт</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h2>Ученики в уроке</h2>
+    <ul>
+      {% for participant in participants %}
+        <li>{{ participant.student.name }} · вошёл {{ participant.joined_at.strftime("%H:%M") }}</li>
+      {% else %}
+        <li>Пока никто не вошёл.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="panel">
+    <h2>События</h2>
+    <ul id="eventList">
+      {% for event in events %}
+        <li>{{ event.created_at.strftime("%H:%M:%S") }} · {{ event.event_type }}{% if event.student %} · {{ event.student.name }}{% endif %}</li>
+      {% else %}
+        <li>Событий пока нет.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+<script src="{{ url_for('static', filename='js/lesson_teacher.js') }}"></script>
+{% endblock %}
+

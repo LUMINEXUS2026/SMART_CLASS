@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Кабинет ученика · SMART_CLASS{% endblock %}
+{% block content %}
+<section class="section-head">
+  <h1>Кабинет ученика</h1>
+  <p>Активные уроки, в которые можно войти.</p>
+</section>
+
+<div class="list">
+  {% for lesson in active_lessons %}
+    <article class="item">
+      <div>
+        <h2>{{ lesson.title }}</h2>
+        <p>{{ lesson.subject }} · начат {{ lesson.starts_at.strftime("%d.%m.%Y %H:%M") }}</p>
+      </div>
+      {% if lesson.id in joined_ids %}
+        <a class="button" href="{{ url_for('student.lesson', lesson_id=lesson.id) }}">Вернуться</a>
+      {% else %}
+        <form method="post" action="{{ url_for('lessons.join', lesson_id=lesson.id) }}">
+          <button type="submit">Войти в урок</button>
+        </form>
+      {% endif %}
+    </article>
+  {% else %}
+    <div class="empty">Сейчас нет активных уроков.</div>
+  {% endfor %}
+</div>
+{% endblock %}
+

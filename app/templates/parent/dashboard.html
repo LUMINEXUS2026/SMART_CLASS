@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Кабинет родителя · SMART_CLASS{% endblock %}
+{% block content %}
+<section class="section-head">
+  <h1>Кабинет родителя</h1>
+  <p>В MVP здесь будет доступ к итоговым отчётам ребёнка после уроков.</p>
+</section>
+<div class="list">
+  {% for lesson in recent_lessons %}
+    <article class="item">
+      <div>
+        <h2>{{ lesson.title }}</h2>
+        <p>{{ lesson.subject }} · {{ lesson.status }}</p>
+      </div>
+    </article>
+  {% else %}
+    <div class="empty">Отчётов пока нет.</div>
+  {% endfor %}
+</div>
+{% endblock %}
+

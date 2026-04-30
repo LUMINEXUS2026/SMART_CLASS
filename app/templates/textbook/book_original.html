@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ page_title }}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='book.css') }}">
+
+  <!-- MathJax -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar__left">
+    <div class="brandmark">📘</div>
+    <div class="topbar__titles">
+      <div class="topbar__title">{{ book_title }}</div>
+      <div class="topbar__crumbs">{{ chapter_title }}</div>
+    </div>
+  </div>
+
+  <div class="topbar__right">
+    <a class="chip" href="#" onclick="return false;">Ресурсы к уроку</a>
+    <button class="iconbtn" title="Содержание"
+            onclick="document.body.classList.toggle('toc-open'); return false;">≡</button>
+    <button class="iconbtn" title="Инфо" onclick="return false;">i</button>
+    <button class="iconbtn" title="Во весь экран" onclick="toggleFullscreen(); return false;">⛶</button>
+  </div>
+</header>
+
+<div class="stage">
+
+  <aside class="tocpanel">
+    <div class="tocpanel__head">Содержание</div>
+    <div class="tocpanel__list">
+      {% for p in flat_pages %}
+        <a class="tocitem {% if p['global_index'] == idx %}is-active{% endif %}"
+           href="{{ url_for('page', i=p['global_index']) }}">
+          {{ p["title"] }}
+        </a>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <main class="spreadwrap">
+    <div id="spread" class="spread">
+      <div class="spread__shadow"></div>
+
+      <section class="page page--left">
+        <div class="page__inner">
+          <div class="page__content">
+            {{ prev_content|safe }}
+          </div>
+        </div>
+      </section>
+
+      <div class="spine"></div>
+
+      <section class="page page--right">
+        <div class="flipSheet" aria-hidden="true"></div>
+
+        <div class="page__inner">
+          <div class="page__content">
+            {{ content|safe }}
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<footer class="bottombar">
+  <div class="bottombar__left"></div>
+
+  <div class="bottombar__center">
+    <a class="navbtn {% if prev is none %}is-disabled{% endif %}"
+       data-nav="prev"
+       href="{% if prev is none %}#{% else %}{{ url_for('page', i=prev) }}{% endif %}">
+      ‹
+    </a>
+
+    <div class="pager">
+      <span class="pager__num">{{ idx + 1 }}</span>
+      <span class="pager__sep">/</span>
+      <span class="pager__total">{{ total }}</span>
+    </div>
+
+    <a class="navbtn {% if next is none %}is-disabled{% endif %}"
+       data-nav="next"
+       href="{% if next is none %}#{% else %}{{ url_for('page', i=next) }}{% endif %}">
+      ›
+    </a>
+  </div>
+
+  <div class="bottombar__right"></div>
+</footer>
+
+<!-- ===== МОДАЛКА ЧАТА ===== -->
+<div id="aiModal" class="aiModal" style="display:none;">
+  <div class="aiModal__backdrop"></div>
+
+  <div class="aiModal__panel" id="aiPanel">
+    <div class="aiModal__head" id="aiDragHandle" title="Перетащи окно мышкой">
+      <div>
+        <div class="aiModal__title">Чат-помощник</div>
+        <div class="aiModal__sub" id="aiMeta"></div>
+      </div>
+      <button class="aiModal__close" id="aiClose">✕</button>
+    </div>
+
+    <div class="aiModal__task" id="aiTaskText"></div>
+
+    <div class="aiModal__actions">
+      <button class="aiBtn" id="aiBtnExplain">Объясни на примере</button>
+      <button class="aiBtn aiBtn--soft" id="aiBtnSimpler">Попроще</button>
+      <button class="aiBtn aiBtn--soft" id="aiBtnSimplest">Ещё проще</button>
+      <button class="aiBtn aiBtn--soft" id="aiBtnCheck">Проверь задание</button>
+      <button class="aiBtn aiBtn--soft" id="aiBtnStop">Остановить</button>
+    </div>
+
+    <div class="aiModal__chat" id="aiChat"></div>
+
+    <div class="aiModal__inputRow">
+      <label class="fileBtn" title="Прикрепить фото решения">
+        📎
+        <input type="file" id="aiFile" accept="image/*" />
+      </label>
+
+      <input class="aiInput" id="aiUserInput" placeholder="Напиши своё решение (или уточняющий вопрос)..." />
+      <button class="aiBtn" id="aiSend">Отправить</button>
+    </div>
+
+    <div class="aiModal__fileHint" id="aiFileHint" style="display:none;"></div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='book.js') }}"></script>
+<script>
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+</script>
+
+</body>
+</html>

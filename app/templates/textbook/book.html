@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Учебник · SMART_CLASS{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/book.css') }}">
+{% endblock %}
+{% block content %}
+<section class="book-layout" data-lesson-id="{{ lesson.id }}" data-page-index="{{ page_index }}">
+  <aside class="book-toc">
+    <h2>Учебник</h2>
+    <ol>
+      {% for item in pages %}
+        <li class="{% if loop.index0 == page_index %}active{% endif %}">
+          <a href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=loop.index0) }}">{{ item.title }}</a>
+        </li>
+      {% endfor %}
+    </ol>
+  </aside>
+  <article class="book-page">
+    <div class="book-meta">{{ page.chapter }} · страница {{ page_index + 1 }} из {{ total }}</div>
+    <h1>{{ page.title }}</h1>
+    <div class="book-content">{{ content|safe }}</div>
+    <nav class="book-nav">
+      {% if prev_index is not none %}
+        <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=prev_index) }}">Назад</a>
+      {% endif %}
+      {% if next_index is not none %}
+        <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=next_index) }}">Дальше</a>
+      {% endif %}
+    </nav>
+  </article>
+</section>
+<script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
+{% endblock %}
+

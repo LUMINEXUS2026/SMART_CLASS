@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Урок · SMART_CLASS{% endblock %}
+{% block content %}
+<section class="lesson-shell" data-lesson-id="{{ lesson.id }}" data-status-url="{{ url_for('lessons.status', lesson_id=lesson.id) }}">
+  <div>
+    <h1>{{ lesson.title }}</h1>
+    <p>{{ lesson.subject }} · урок активен</p>
+  </div>
+  <div class="actions">
+    <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Открыть учебник</a>
+  </div>
+</section>
+<section class="panel">
+  <h2>Что фиксирует система</h2>
+  <p>Только наблюдаемые события: вход в урок, переходы по учебнику, уход со вкладки и возврат. Решение всегда принимает учитель.</p>
+</section>
+<script src="{{ url_for('static', filename='js/lesson_student.js') }}"></script>
+{% endblock %}
+

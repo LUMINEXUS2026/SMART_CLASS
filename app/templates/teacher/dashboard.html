@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Кабинет учителя · SMART_CLASS{% endblock %}
+{% block content %}
+<section class="section-head">
+  <h1>Кабинет учителя</h1>
+  <form method="post" action="{{ url_for('lessons.create_lesson') }}" class="inline-form">
+    <input name="title" placeholder="Название урока" value="Математика 6 класс">
+    <input name="subject" placeholder="Предмет" value="Математика">
+    <button type="submit">Создать урок</button>
+  </form>
+</section>
+
+<div class="list">
+  {% for lesson in lessons %}
+    <article class="item">
+      <div>
+        <h2>{{ lesson.title }}</h2>
+        <p>{{ lesson.subject }} · {{ lesson.status }} · {{ lesson.starts_at.strftime("%d.%m.%Y %H:%M") }}</p>
+      </div>
+      <a class="button" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">Открыть</a>
+    </article>
+  {% else %}
+    <div class="empty">Уроков пока нет.</div>
+  {% endfor %}
+</div>
+{% endblock %}
+

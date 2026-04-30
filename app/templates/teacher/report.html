@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Отчёт урока · SMART_CLASS{% endblock %}
+{% block content %}
+<section class="section-head">
+  <h1>Итоговый отчёт</h1>
+  <p>{{ lesson.title }} · {{ lesson.subject }}</p>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h2>Сводка событий</h2>
+    <ul>
+      {% for event_type, count in counts.items() %}
+        <li>{{ event_type }}: {{ count }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="panel">
+    <h2>Хронология</h2>
+    <ul>
+      {% for event in events %}
+        <li>{{ event.created_at.strftime("%H:%M:%S") }} · {{ event.event_type }}{% if event.student %} · {{ event.student.name }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}
+
