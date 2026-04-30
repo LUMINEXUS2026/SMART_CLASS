@@ -1,27 +1,82 @@
 {% extends "base.html" %}
 {% block title %}Администратор · SMART_CLASS{% endblock %}
+{% block page_title %}Администратор{% endblock %}
+{% block page_subtitle %}Агрегированная картина по школе без live-видео по умолчанию{% endblock %}
 {% block content %}
-<section class="section-head">
-  <h1>Администратор</h1>
-  <p>Пользователи и уроки MVP.</p>
+<section class="metric-grid">
+  <article class="metric-card"><div class="metric-value">{{ groups|length }}</div><div class="metric-label">Группы</div></article>
+  <article class="metric-card"><div class="metric-value">{{ lessons|length }}</div><div class="metric-label">Уроки</div></article>
+  <article class="metric-card"><div class="metric-value">{{ teachers|length }}</div><div class="metric-label">Учителя</div></article>
+  <article class="metric-card"><div class="metric-value">{{ parents|length }}</div><div class="metric-label">Родители</div></article>
 </section>
+
+<section class="grid">
+  <div class="panel">
+    <h2>Агрегированная статистика по группам</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Группа</th><th>Ученики</th><th>Уроки</th><th>Пришли</th><th>Опоздали</th><th>Выходы</th><th>Отвлечения</th><th>Difficulty rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in group_stats %}
+          <tr>
+            <td>{{ row.group.name }}</td>
+            <td>{{ row.students }}</td>
+            <td>{{ row.lessons }}</td>
+            <td>{{ row.arrived }}</td>
+            <td>{{ row.late }}</td>
+            <td>{{ row.left }}</td>
+            <td>{{ row.distractions }}</td>
+            <td>{{ row.difficulty }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Настройки политик</h2>
+    {% if policy %}
+      <table class="data-table">
+        <tr><td>Опоздание после</td><td>{{ policy.late_after_minutes }} мин</td></tr>
+        <tr><td>Выход из класса после</td><td>{{ policy.left_after_minutes }} мин</td></tr>
+        <tr><td>Уведомлять об опоздании</td><td>{{ "да" if policy.notify_parent_on_late else "нет" }}</td></tr>
+        <tr><td>Уведомлять о summary</td><td>{{ "да" if policy.notify_parent_on_summary else "нет" }}</td></tr>
+      </table>
+    {% endif %}
+    <p>Администратор видит агрегаты и настройки, но не использует события для автоматических санкций.</p>
+  </div>
+</section>
+
 <section class="grid">
   <div class="panel">
     <h2>Пользователи</h2>
-    <ul>
-      {% for user in users %}
-        <li>{{ user.name }} · {{ user.email }} · {{ user.role }}</li>
-      {% endfor %}
-    </ul>
+    <table class="data-table">
+      <thead><tr><th>Имя</th><th>Email</th><th>Роль</th></tr></thead>
+      <tbody>
+        {% for user in users %}
+          <tr><td>{{ user.name }}</td><td>{{ user.email }}</td><td>{{ user.role }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
   <div class="panel">
-    <h2>Уроки</h2>
-    <ul>
-      {% for lesson in lessons %}
-        <li>{{ lesson.title }} · {{ lesson.status }}</li>
-      {% endfor %}
-    </ul>
+    <h2>Уроки по дням/неделям</h2>
+    <table class="data-table">
+      <thead><tr><th>Урок</th><th>Учитель</th><th>Группа</th><th>Статус</th></tr></thead>
+      <tbody>
+        {% for lesson in lessons %}
+          <tr>
+            <td>{{ lesson.title }}</td>
+            <td>{{ lesson.teacher.name }}</td>
+            <td>{{ lesson.group.name if lesson.group else "без группы" }}</td>
+            <td>{{ lesson.status }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </section>
 {% endblock %}
-

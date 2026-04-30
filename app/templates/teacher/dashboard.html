@@ -4,26 +4,10 @@
 {% block page_subtitle %}Live-аналитика уроков и камер{% endblock %}
 {% block content %}
 <section class="metric-grid">
-  <article class="metric-card">
-    <div class="metric-icon">★</div>
-    <div class="metric-value">83/100</div>
-    <div class="metric-label">Средняя оценка уроков</div>
-  </article>
-  <article class="metric-card">
-    <div class="metric-icon">◎</div>
-    <div class="metric-value">87%</div>
-    <div class="metric-label">Вовлечённость</div>
-  </article>
-  <article class="metric-card">
-    <div class="metric-icon">◉</div>
-    <div class="metric-value">74%</div>
-    <div class="metric-label">Внимание учеников</div>
-  </article>
-  <article class="metric-card">
-    <div class="metric-icon">▭</div>
-    <div class="metric-value">2/2</div>
-    <div class="metric-label">Live-камеры онлайн</div>
-  </article>
+  <article class="metric-card"><div class="metric-icon">▦</div><div class="metric-value">{{ lessons|length }}</div><div class="metric-label">Мои уроки</div></article>
+  <article class="metric-card"><div class="metric-icon">◎</div><div class="metric-value">{{ groups|length }}</div><div class="metric-label">Мои группы</div></article>
+  <article class="metric-card"><div class="metric-icon">◉</div><div class="metric-value">{{ event_counts["student_arrived"] }}</div><div class="metric-label">Пришли</div></article>
+  <article class="metric-card"><div class="metric-icon">!</div><div class="metric-value">{{ event_counts["difficulty_indicator_detected"] }}</div><div class="metric-label">Индикаторы трудностей</div></article>
 </section>
 
 <section class="section-head">
@@ -34,6 +18,11 @@
   <form method="post" action="{{ url_for('lessons.create_lesson') }}" class="inline-form">
     <input name="title" placeholder="Название урока" value="Математика 6 класс">
     <input name="subject" placeholder="Предмет" value="Математика">
+    <select name="group_id">
+      {% for group in groups %}
+        <option value="{{ group.id }}">{{ group.name }}</option>
+      {% endfor %}
+    </select>
     <button type="submit">Создать урок</button>
   </form>
 </section>
@@ -46,7 +35,7 @@
           <h2>{{ lesson.title }}</h2>
           <p>{{ lesson.subject }} · {{ lesson.status }} · {{ lesson.starts_at.strftime("%d.%m.%Y %H:%M") }}</p>
         </div>
-        <a class="button" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">Видеонаблюдение</a>
+        <a class="button" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">Открыть урок</a>
       </article>
     {% else %}
       <div class="empty">Уроков пока нет.</div>
@@ -58,8 +47,8 @@
     <div class="event-stack">
       <div class="event-card">
         <span class="severity warning">Внимание</span>
-        <strong>Ученик покинул вкладку</strong>
-        <span>Кабинет 301 · только наблюдаемое событие</span>
+        <strong>Мои события уроков</strong>
+        <span>Отображаются только группы, привязанные к учителю.</span>
       </div>
       <div class="event-card">
         <span class="severity">Инфо</span>

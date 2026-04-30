@@ -10,6 +10,8 @@ class Lesson(db.Model):
     ends_at = db.Column(db.DateTime)
     late_after_minutes = db.Column(db.Integer, default=10, nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey("group.id"), index=True)
+    teacher_comment = db.Column(db.Text, default="", nullable=False)
 
     teacher = db.relationship("User", backref="created_lessons")
-
+    group = db.relationship("Group", backref="lessons")

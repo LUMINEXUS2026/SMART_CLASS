@@ -17,3 +17,6 @@ def roles_required(*roles):
 
     return decorator
 
+
+def strict_roles_required(*roles):
+    return roles_required(*roles)

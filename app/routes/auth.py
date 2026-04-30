@@ -7,7 +7,7 @@ from app.models import User
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-ALLOWED_ROLES = {"student", "teacher", "parent", "admin"}
+ALLOWED_ROLES = {"parent", "teacher", "admin"}
 
 
 @auth_bp.get("/login")
@@ -72,11 +72,10 @@ def logout():
 def redirect_after_login():
     if current_user.role == "teacher":
         return redirect(url_for("teacher.dashboard"))
-    if current_user.role == "student":
-        return redirect(url_for("student.dashboard"))
     if current_user.role == "admin":
         return redirect(url_for("admin.dashboard"))
     if current_user.role == "parent":
         return redirect(url_for("parent.dashboard"))
+    if current_user.role == "student":
+        return redirect(url_for("student.dashboard"))
     return redirect(url_for("auth.login"))
-

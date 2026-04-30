@@ -1,21 +1,69 @@
 {% extends "base.html" %}
 {% block title %}Кабинет родителя · SMART_CLASS{% endblock %}
+{% block page_title %}Кабинет родителя{% endblock %}
+{% block page_subtitle %}Только данные вашего ребёнка{% endblock %}
 {% block content %}
-<section class="section-head">
-  <h1>Кабинет родителя</h1>
-  <p>В MVP здесь будет доступ к итоговым отчётам ребёнка после уроков.</p>
-</section>
-<div class="list">
-  {% for lesson in recent_lessons %}
-    <article class="item">
-      <div>
-        <h2>{{ lesson.title }}</h2>
-        <p>{{ lesson.subject }} · {{ lesson.status }}</p>
+{% for card in child_cards %}
+  <section class="section-head">
+    <div>
+      <h2>{{ card.student.full_name }}</h2>
+      <p>Группа: {{ card.student.group.name }} · текущий статус: <strong>{{ card.latest_status }}</strong></p>
+    </div>
+    <span class="pill">Личный доступ</span>
+  </section>
+
+  <section class="metric-grid">
+    <article class="metric-card"><div class="metric-value">{{ card.participations|length }}</div><div class="metric-label">Уроков посещено</div></article>
+    <article class="metric-card"><div class="metric-value">{{ card.counts["student_late"] }}</div><div class="metric-label">Опоздания</div></article>
+    <article class="metric-card"><div class="metric-value">{{ card.counts["student_left_during_lesson"] }}</div><div class="metric-label">Выходы во время урока</div></article>
+    <article class="metric-card"><div class="metric-value">{{ card.activity_count }}</div><div class="metric-label">Активность в учебнике</div></article>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Уведомления</h2>
+      <div class="event-stack">
+        {% for note in card.notifications %}
+          <div class="event-card">
+            <span class="severity {% if note.level == 'warning' %}warning{% endif %}">{{ note.level }}</span>
+            <strong>{{ note.title }}</strong>
+            <span>{{ note.message }}</span>
+          </div>
+        {% else %}
+          <p>Уведомлений пока нет.</p>
+        {% endfor %}
       </div>
-    </article>
-  {% else %}
-    <div class="empty">Отчётов пока нет.</div>
-  {% endfor %}
-</div>
+    </div>
+
+    <div class="panel">
+      <h2>Итоговая статистика</h2>
+      <table class="data-table">
+        <tr><th>Показатель</th><th>Значение</th></tr>
+        <tr><td>Присутствовал</td><td>{{ "да" if card.counts["student_arrived"] else "нет данных" }}</td></tr>
+        <tr><td>Опоздания</td><td>{{ card.counts["student_late"] }}</td></tr>
+        <tr><td>Отвлечения</td><td>{{ card.counts["distraction_detected"] }}</td></tr>
+        <tr><td>Индикаторы затруднений</td><td>{{ card.counts["difficulty_indicator_detected"] }}</td></tr>
+      </table>
+      <p>Summary: система фиксирует только наблюдаемые события и помогает взрослым увидеть динамику без автоматических выводов.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Последние события ребёнка</h2>
+    <div class="event-stack">
+      {% for event in card.events %}
+        <div class="event-card">
+          <span class="severity">{{ labels[event.event_type] }}</span>
+          <strong>{{ event.lesson.title }}</strong>
+          <span>{{ event.created_at.strftime("%d.%m %H:%M") }}</span>
+        </div>
+      {% else %}
+        <p>Событий пока нет.</p>
+      {% endfor %}
+    </div>
+  </section>
+{% else %}
+  <section class="empty">К этому родителю пока не привязан ученик.</section>
+{% endfor %}
 {% endblock %}
 

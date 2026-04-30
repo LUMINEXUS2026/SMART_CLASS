@@ -63,13 +63,33 @@
 
     <div class="panel">
       <h2>Ученики в уроке</h2>
-      <ul>
-        {% for participant in participants %}
-          <li>{{ participant.student.name }} · вошёл {{ participant.joined_at.strftime("%H:%M") }}</li>
-        {% else %}
-          <li>Пока никто не вошёл.</li>
-        {% endfor %}
-      </ul>
+      <table class="data-table">
+        <thead><tr><th>Ученик</th><th>Статус</th><th>Учебник</th><th>Исправить</th></tr></thead>
+        <tbody>
+          {% for student in group_students %}
+            {% set participant = participants|selectattr("student_id", "equalto", student.user_id)|first %}
+            <tr>
+              <td>{{ student.full_name }}</td>
+              <td>{{ participant.attendance_status if participant else "absent" }}</td>
+              <td>{{ activity_by_student.get(student.user_id, 0) }}</td>
+              <td>
+                <form method="post" action="{{ url_for('teacher.update_attendance', lesson_id=lesson.id) }}" class="mini-form">
+                  <input type="hidden" name="student_id" value="{{ student.user_id }}">
+                  <select name="status">
+                    <option value="arrived">пришел</option>
+                    <option value="late">опоздал</option>
+                    <option value="absent">отсутствует</option>
+                    <option value="left">вышел</option>
+                    <option value="returned">вернулся</option>
+                    <option value="left_early">ушел раньше</option>
+                  </select>
+                  <button class="btn ghost" type="submit">OK</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
     <div class="panel">
@@ -88,7 +108,11 @@
         <div class="event-card">
           <span class="severity {% if 'left' in event.event_type %}warning{% endif %}">{{ event.event_type }}</span>
           <strong>{% if event.student %}{{ event.student.name }}{% else %}Система{% endif %}</strong>
-          <span>{{ event.created_at.strftime("%H:%M:%S") }} · {{ event.source }}</span>
+          <span>{{ event.created_at.strftime("%H:%M:%S") }} · {{ event.source }} · {{ event.review_status }}</span>
+          <form method="post" action="{{ url_for('teacher.review_event', event_id=event.id) }}" class="mini-form">
+            <button class="btn ghost" name="action" value="confirmed" type="submit">Подтвердить</button>
+            <button class="btn ghost" name="action" value="rejected" type="submit">Отклонить</button>
+          </form>
         </div>
       {% else %}
         <div class="event-card">

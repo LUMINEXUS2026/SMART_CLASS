@@ -8,6 +8,8 @@ class LessonParticipant(db.Model):
     joined_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
     left_at = db.Column(db.DateTime)
     is_present_by_camera = db.Column(db.Boolean, default=False, nullable=False)
+    attendance_status = db.Column(db.String(40), default="absent", nullable=False)
+    manual_note = db.Column(db.String(255), default="", nullable=False)
 
     lesson = db.relationship("Lesson", backref="participants")
     student = db.relationship("User", backref="lesson_participations")
@@ -15,4 +17,3 @@ class LessonParticipant(db.Model):
     __table_args__ = (
         db.UniqueConstraint("lesson_id", "student_id", name="uq_lesson_student"),
     )
-

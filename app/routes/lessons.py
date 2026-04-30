@@ -11,11 +11,12 @@ lessons_bp = Blueprint("lessons", __name__, url_prefix="/lessons")
 
 
 @lessons_bp.post("")
-@roles_required("teacher", "admin")
+@roles_required("teacher")
 def create_lesson():
     title = request.form.get("title", "").strip() or "Новый урок"
     subject = request.form.get("subject", "").strip() or "Математика"
-    lesson = Lesson(title=title, subject=subject, teacher_id=current_user.id)
+    group_id = request.form.get("group_id", type=int)
+    lesson = Lesson(title=title, subject=subject, teacher_id=current_user.id, group_id=group_id)
     db.session.add(lesson)
     db.session.commit()
     return redirect(url_for("teacher.lesson_live", lesson_id=lesson.id))
@@ -32,7 +33,7 @@ def join(lesson_id):
 
 
 @lessons_bp.post("/<int:lesson_id>/finish")
-@roles_required("teacher", "admin")
+@roles_required("teacher")
 def finish(lesson_id):
     lesson = Lesson.query.get_or_404(lesson_id)
     finish_lesson(lesson)
@@ -46,4 +47,3 @@ def status(lesson_id):
     lesson = Lesson.query.get_or_404(lesson_id)
     participant_count = LessonParticipant.query.filter_by(lesson_id=lesson.id).count()
     return jsonify({"id": lesson.id, "status": lesson.status, "participants": participant_count})
-

@@ -548,6 +548,42 @@ ul {
   color: var(--muted);
 }
 
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th {
+  color: #8b909d;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mini-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.mini-form select,
+.mini-form button {
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: 13px;
+}
+
 .severity {
   display: inline-flex;
   width: fit-content;
@@ -611,4 +647,3 @@ ul {
     grid-template-columns: 1fr;
   }
 }
-

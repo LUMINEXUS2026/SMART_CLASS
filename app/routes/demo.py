@@ -4,7 +4,7 @@ from flask import Blueprint, current_app, jsonify, redirect, render_template, re
 from werkzeug.security import generate_password_hash
 
 from app.extensions import db
-from app.models import Lesson, LessonEvent, TextbookActivity, User
+from app.models import Lesson, LessonEvent, Student, TextbookActivity, User
 from app.routes.textbook import flatten_pages, load_toc, render_markdown
 from app.services.event_service import create_event
 from app.services.lesson_service import finish_lesson
@@ -27,11 +27,14 @@ def teacher_live(lesson_id):
         .limit(100)
         .all()
     )
+    group_students = Student.query.filter_by(group_id=lesson.group_id).order_by(Student.full_name.asc()).all() if lesson.group_id else []
     return render_template(
         "teacher/lesson_live.html",
         lesson=lesson,
         participants=lesson.participants,
+        group_students=group_students,
         events=events,
+        activity_by_student={student.user_id: 0 for student in group_students},
         events_url=url_for("demo.demo_events", lesson_id=lesson.id),
         finish_url=url_for("demo.finish_demo_lesson", lesson_id=lesson.id),
     )
