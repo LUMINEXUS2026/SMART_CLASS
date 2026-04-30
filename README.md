@@ -1,10 +1,10 @@
 # SMART_CLASS MVP-1 EDUCAM
 
-SMART_CLASS combines a dynamic textbook, lesson management, observable lesson events, and a separate OpenCV camera worker.
+SMART_CLASS is an MVP for EDUCAM: a smart classroom platform with lesson management, a dynamic textbook, camera events, and lesson analytics.
 
-The MVP intentionally records only observable events. It does not perform emotion recognition, psychological conclusions, or automatic punishments.
+The MVP records only observable events. It does not perform emotion recognition, psychological conclusions, or automatic punishments. The system helps the teacher make decisions.
 
-## Local run
+## Local Run
 
 ```powershell
 python -m venv .venv
@@ -23,7 +23,7 @@ Demo users after `seed-demo`:
 - `parent@example.com` / `password`
 - `admin@example.com` / `password`
 
-## MVP modules
+## MVP Modules
 
 - Registration and login.
 - Roles: student, teacher, parent, administrator.
@@ -36,4 +36,25 @@ Demo users after `seed-demo`:
 - Lesson events API.
 - Teacher dashboard and lesson report.
 - Camera worker stub that sends observable events to the backend.
+
+## Lesson Events
+
+- `student_arrived`
+- `student_late`
+- `student_left_during_lesson`
+- `student_returned_during_lesson`
+- `student_left_early`
+- `distraction_detected`
+- `difficulty_indicator_detected`
+- `lesson_summary_ready`
+
+## Camera Service
+
+OpenCV code belongs in `camera_service/`. The web app must not depend directly on camera windows, RTSP streams, or local face folders.
+
+Run the stub:
+
+```powershell
+python camera_service/camera_worker.py --backend http://127.0.0.1:5000 --lesson-id 1 --token change-camera-token --dry-run
+```
 
