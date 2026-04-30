@@ -9,7 +9,12 @@
     list.innerHTML = events.map((event) => {
       const time = new Date(event.created_at).toLocaleTimeString();
       const student = event.student ? ` · ${event.student}` : "";
-      return `<li>${time} · ${event.event_type}${student}</li>`;
+      const tone = event.event_type.includes("left") ? " warning" : "";
+      return `<div class="event-card">
+        <span class="severity${tone}">${event.event_type}</span>
+        <strong>${event.student || "Система"}</strong>
+        <span>${time}${student} · ${event.source}</span>
+      </div>`;
     }).join("");
   }
 

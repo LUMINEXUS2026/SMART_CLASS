@@ -1,8 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Кабинет учителя · SMART_CLASS{% endblock %}
+{% block title %}Обзор · SMART_CLASS{% endblock %}
+{% block page_title %}Обзор{% endblock %}
+{% block page_subtitle %}Live-аналитика уроков и камер{% endblock %}
 {% block content %}
+<section class="metric-grid">
+  <article class="metric-card">
+    <div class="metric-icon">★</div>
+    <div class="metric-value">83/100</div>
+    <div class="metric-label">Средняя оценка уроков</div>
+  </article>
+  <article class="metric-card">
+    <div class="metric-icon">◎</div>
+    <div class="metric-value">87%</div>
+    <div class="metric-label">Вовлечённость</div>
+  </article>
+  <article class="metric-card">
+    <div class="metric-icon">◉</div>
+    <div class="metric-value">74%</div>
+    <div class="metric-label">Внимание учеников</div>
+  </article>
+  <article class="metric-card">
+    <div class="metric-icon">▭</div>
+    <div class="metric-value">2/2</div>
+    <div class="metric-label">Live-камеры онлайн</div>
+  </article>
+</section>
+
 <section class="section-head">
-  <h1>Кабинет учителя</h1>
+  <div>
+    <h2>Уроки сегодня</h2>
+    <p>Создайте урок или откройте live-наблюдение.</p>
+  </div>
   <form method="post" action="{{ url_for('lessons.create_lesson') }}" class="inline-form">
     <input name="title" placeholder="Название урока" value="Математика 6 класс">
     <input name="subject" placeholder="Предмет" value="Математика">
@@ -10,18 +38,35 @@
   </form>
 </section>
 
-<div class="list">
-  {% for lesson in lessons %}
-    <article class="item">
-      <div>
-        <h2>{{ lesson.title }}</h2>
-        <p>{{ lesson.subject }} · {{ lesson.status }} · {{ lesson.starts_at.strftime("%d.%m.%Y %H:%M") }}</p>
+<div class="grid">
+  <div class="list">
+    {% for lesson in lessons %}
+      <article class="item">
+        <div>
+          <h2>{{ lesson.title }}</h2>
+          <p>{{ lesson.subject }} · {{ lesson.status }} · {{ lesson.starts_at.strftime("%d.%m.%Y %H:%M") }}</p>
+        </div>
+        <a class="button" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">Видеонаблюдение</a>
+      </article>
+    {% else %}
+      <div class="empty">Уроков пока нет.</div>
+    {% endfor %}
+  </div>
+
+  <aside class="panel">
+    <h2>Последние события</h2>
+    <div class="event-stack">
+      <div class="event-card">
+        <span class="severity warning">Внимание</span>
+        <strong>Ученик покинул вкладку</strong>
+        <span>Кабинет 301 · только наблюдаемое событие</span>
       </div>
-      <a class="button" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">Открыть</a>
-    </article>
-  {% else %}
-    <div class="empty">Уроков пока нет.</div>
-  {% endfor %}
+      <div class="event-card">
+        <span class="severity">Инфо</span>
+        <strong>Ученик вернулся в учебник</strong>
+        <span>Событие зафиксировано web-трекером</span>
+      </div>
+    </div>
+  </aside>
 </div>
 {% endblock %}
-

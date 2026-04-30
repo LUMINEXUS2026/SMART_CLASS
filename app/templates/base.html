@@ -8,30 +8,107 @@
   {% block head %}{% endblock %}
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/">SMART_CLASS</a>
-    <nav>
-      {% if current_user.is_authenticated %}
-        <span>{{ current_user.name }} · {{ current_user.role }}</span>
-        <form method="post" action="{{ url_for('auth.logout') }}">
-          <button type="submit">Выйти</button>
-        </form>
-      {% else %}
-        <a href="{{ url_for('auth.login') }}">Вход</a>
-        <a href="{{ url_for('auth.register') }}">Регистрация</a>
-      {% endif %}
-    </nav>
-  </header>
-  <main class="page">
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="notice">
-          {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="window-dots" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <a class="side-brand" href="{{ url_for('demo.home') }}">
+        <span class="brand-icon">SC</span>
+        <span>
+          <strong>SMART_CLASS</strong>
+          <small>Образовательная аналитика</small>
+        </span>
+      </a>
+      <div class="school-name">MVP-1 EDUCAM</div>
+
+      <nav class="side-nav">
+        <a class="nav-item {% if request.endpoint in ['teacher.dashboard', 'demo.home'] %}active{% endif %}" href="{{ url_for('demo.home') }}">
+          <span>▦</span> Обзор
+        </a>
+        {% if request.path.startswith('/demo') %}
+          <a class="nav-item {% if 'teacher' in request.path %}active{% endif %}" href="{{ url_for('demo.teacher_live', lesson_id=lesson.id if lesson is defined else 1) }}">
+            <span>▭</span> Видеонаблюдение
+          </a>
+          <a class="nav-item" href="{{ url_for('demo.student_book', lesson_id=lesson.id if lesson is defined else 1, page_index=0) }}">
+            <span>▤</span> Учебник
+          </a>
+        {% else %}
+          <a class="nav-item {% if request.endpoint == 'teacher.lesson_live' %}active{% endif %}" href="{{ url_for('teacher.dashboard') }}">
+            <span>▭</span> Видеонаблюдение
+          </a>
+        {% endif %}
+        <a class="nav-item {% if request.endpoint == 'reports.lesson_report' %}active{% endif %}" href="#">
+          <span>▣</span> Анализ урока
+        </a>
+        <a class="nav-item" href="#">
+          <span>▢</span> События
+        </a>
+        <a class="nav-item" href="#">
+          <span>▥</span> Аналитика
+        </a>
+        <a class="nav-item" href="#">
+          <span>⚙</span> Настройки
+        </a>
+      </nav>
+
+      <div class="side-section">
+        <h3>Последние уроки</h3>
+        <div class="side-list">
+          <span class="dot purple"></span>
+          <div><strong>Математика</strong><small>09:00 | Активен</small></div>
         </div>
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
+        <div class="side-list">
+          <span class="dot green"></span>
+          <div><strong>Русский язык</strong><small>10:00 | Оценка: 91</small></div>
+        </div>
+        <div class="side-list">
+          <span class="dot orange"></span>
+          <div><strong>Информатика</strong><small>11:00 | Идёт запись</small></div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h3>Кабинеты</h3>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 301</strong><small>Учитель + ученики</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 302</strong><small>Онлайн</small></div></div>
+        <div class="side-list"><span class="dot muted-dot"></span><div><strong>Кабинет 204</strong><small>Оффлайн</small></div></div>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <div>
+          <h1>{% block page_title %}SMART_CLASS{% endblock %}</h1>
+          <p>{% block page_subtitle %}{% endblock %}</p>
+        </div>
+        <div class="topbar-right">
+          <div class="clock" data-clock>--:--:--</div>
+          {% if current_user.is_authenticated %}
+            <span class="user-chip">{{ current_user.name }} · {{ current_user.role }}</span>
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <button class="btn ghost" type="submit">Выйти</button>
+            </form>
+          {% else %}
+            <a class="btn ghost" href="{{ url_for('auth.login') }}">Вход</a>
+            <a class="btn" href="{{ url_for('demo.home') }}">Демо</a>
+          {% endif %}
+        </div>
+      </header>
+
+      <main class="page">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="notice">
+              {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>
-

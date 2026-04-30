@@ -1,15 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Живой урок · SMART_CLASS{% endblock %}
+{% block title %}Видеонаблюдение · SMART_CLASS{% endblock %}
+{% block page_title %}Видеонаблюдение{% endblock %}
+{% block page_subtitle %}Две live-камеры: учитель и ученики{% endblock %}
 {% block content %}
 {% set live_events_url = events_url|default(url_for('events.list_events', lesson_id=lesson.id)) %}
 {% set live_finish_url = finish_url|default(url_for('lessons.finish', lesson_id=lesson.id)) %}
+
 <section class="lesson-shell" data-lesson-id="{{ lesson.id }}" data-events-url="{{ live_events_url }}">
   <div>
     <h1>{{ lesson.title }}</h1>
-    <p>{{ lesson.subject }} · статус: {{ lesson.status }}</p>
+    <p>{{ lesson.subject }} · статус: {{ lesson.status }} · live-потоки готовы к RTSP</p>
   </div>
   <div class="actions">
-    <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник</a>
+    <a class="button secondary" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник</a>
     {% if lesson.status == "active" %}
       <form method="post" action="{{ live_finish_url }}">
         <button type="submit">Завершить урок</button>
@@ -20,27 +23,83 @@
   </div>
 </section>
 
-<section class="grid">
-  <div class="panel">
-    <h2>Ученики в уроке</h2>
-    <ul>
-      {% for participant in participants %}
-        <li>{{ participant.student.name }} · вошёл {{ participant.joined_at.strftime("%H:%M") }}</li>
-      {% else %}
-        <li>Пока никто не вошёл.</li>
-      {% endfor %}
-    </ul>
+<div class="camera-tabs">
+  <span class="label">Кабинет:</span>
+  <button class="btn">Все камеры</button>
+  <button class="btn ghost">Камера учителя</button>
+  <button class="btn ghost">Камера учеников</button>
+  <button class="btn ghost">RTSP настройки</button>
+</div>
+
+<section class="camera-layout">
+  <div class="camera-grid">
+    <article class="camera-card">
+      <div class="camera-feed teacher">
+        <span class="scan-line"></span>
+        <span class="rec">● REC</span>
+        <span class="cam-name">Камера 1 · Учитель</span>
+        <span class="cam-clock" data-clock>--:--:--</span>
+        <span class="attention-chip">teacher zone 92%</span>
+      </div>
+      <footer class="camera-footer">
+        <span class="camera-status"><span class="dot green"></span><strong>Учитель</strong></span>
+        <span><span class="badge">LIVE</span> 1920x1080</span>
+      </footer>
+    </article>
+
+    <article class="camera-card">
+      <div class="camera-feed students">
+        <span class="scan-line"></span>
+        <span class="rec">● REC</span>
+        <span class="cam-name">Камера 2 · Ученики</span>
+        <span class="cam-clock" data-clock>--:--:--</span>
+        <span class="attention-chip">attention 74%</span>
+      </div>
+      <footer class="camera-footer">
+        <span class="camera-status"><span class="dot green"></span><strong>Ученики</strong></span>
+        <span><span class="badge">LIVE</span> 1920x1080</span>
+      </footer>
+    </article>
+
+    <div class="panel">
+      <h2>Ученики в уроке</h2>
+      <ul>
+        {% for participant in participants %}
+          <li>{{ participant.student.name }} · вошёл {{ participant.joined_at.strftime("%H:%M") }}</li>
+        {% else %}
+          <li>Пока никто не вошёл.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h2>Live-метрики</h2>
+      <div class="metric-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin:0;">
+        <article class="metric-card"><div class="metric-value">74%</div><div class="metric-label">Внимание</div></article>
+        <article class="metric-card"><div class="metric-value">2</div><div class="metric-label">Камеры</div></article>
+      </div>
+    </div>
   </div>
-  <div class="panel">
-    <h2>События</h2>
-    <ul id="eventList">
+
+  <aside class="panel">
+    <h2>Текущие события</h2>
+    <div class="event-stack" id="eventList">
       {% for event in events %}
-        <li>{{ event.created_at.strftime("%H:%M:%S") }} · {{ event.event_type }}{% if event.student %} · {{ event.student.name }}{% endif %}</li>
+        <div class="event-card">
+          <span class="severity {% if 'left' in event.event_type %}warning{% endif %}">{{ event.event_type }}</span>
+          <strong>{% if event.student %}{{ event.student.name }}{% else %}Система{% endif %}</strong>
+          <span>{{ event.created_at.strftime("%H:%M:%S") }} · {{ event.source }}</span>
+        </div>
       {% else %}
-        <li>Событий пока нет.</li>
+        <div class="event-card">
+          <span class="severity">Инфо</span>
+          <strong>Событий пока нет</strong>
+          <span>Откройте учебник ученика и переключите вкладку.</span>
+        </div>
       {% endfor %}
-    </ul>
-  </div>
+    </div>
+  </aside>
 </section>
+
 <script src="{{ url_for('static', filename='js/lesson_teacher.js') }}"></script>
 {% endblock %}
