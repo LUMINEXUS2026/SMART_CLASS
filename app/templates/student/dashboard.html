@@ -13,13 +13,16 @@
         <h2>{{ lesson.title }}</h2>
         <p>{{ lesson.subject }} · начат {{ lesson.starts_at.strftime("%d.%m.%Y %H:%M") }}</p>
       </div>
-      {% if lesson.id in joined_ids %}
-        <a class="button" href="{{ url_for('student.lesson', lesson_id=lesson.id) }}">Вернуться</a>
-      {% else %}
-        <form method="post" action="{{ url_for('lessons.join', lesson_id=lesson.id) }}">
-          <button type="submit">Войти в урок</button>
-        </form>
-      {% endif %}
+      <div class="actions">
+        {% if lesson.id in joined_ids %}
+          <a class="button" href="{{ url_for('student.lesson', lesson_id=lesson.id) }}">Вернуться</a>
+          <a class="button secondary" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник 6 класса</a>
+        {% else %}
+          <form method="post" action="{{ url_for('lessons.join', lesson_id=lesson.id) }}">
+            <button type="submit">Войти в урок</button>
+          </form>
+        {% endif %}
+      </div>
     </article>
   {% else %}
     <div class="empty">Сейчас нет активных уроков.</div>

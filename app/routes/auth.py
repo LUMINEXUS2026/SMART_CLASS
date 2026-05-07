@@ -3,12 +3,12 @@ from flask_login import current_user, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
-from app.models import User
+from app.models import Group, Student, User
 from app.services.attendance_service import record_student_login_presence, record_student_logout
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-ALLOWED_ROLES = {"parent", "teacher", "admin"}
+ALLOWED_ROLES = {"student", "parent", "teacher", "admin"}
 
 
 @auth_bp.get("/login")
@@ -62,8 +62,19 @@ def register_post():
         password_hash=generate_password_hash(password),
     )
     db.session.add(user)
+    db.session.flush()
+    if role == "student":
+        group = Group.query.order_by(Group.id.asc()).first()
+        if not group:
+            group = Group(name="6 класс", description="Демо-группа динамического учебника")
+            db.session.add(group)
+            db.session.flush()
+        db.session.add(Student(user_id=user.id, group_id=group.id, full_name=name))
     db.session.commit()
     login_user(user)
+    if user.role == "student":
+        record_student_login_presence(user)
+        db.session.commit()
     return redirect_after_login()
 
 

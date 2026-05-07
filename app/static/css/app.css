@@ -180,6 +180,7 @@ p {
 .dot.green { background: var(--green); }
 .dot.orange { background: var(--orange); }
 .dot.purple { background: var(--purple); }
+.dot.cyan { background: var(--cyan); }
 .dot.red-dot { background: var(--red); }
 .muted-dot { background: #cbd5e1; }
 
