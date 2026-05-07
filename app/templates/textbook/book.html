@@ -18,6 +18,7 @@
   data-page-index="{{ page_index }}"
   data-activity-url="{{ activity_url }}"
   data-status-url="{{ status_url }}"
+  data-homework-url="{{ homework_url }}"
 >
   <aside class="book-sidebar">
     <div class="book-brand">
@@ -30,7 +31,7 @@
     <div class="book-student">{{ student_name|default("Ученик") }}</div>
     <ol class="book-toc">
       {% for item in pages %}
-        <li class="{% if loop.index0 == page_index %}active{% endif %}">
+        <li class="{% if loop.index0 == page_index or loop.index0 == right_page_index %}active{% endif %}">
           <a href="{{ book_url(loop.index0) }}">
             <span>{{ loop.index }}</span>
             <strong>{{ item.title }}</strong>
@@ -40,10 +41,10 @@
     </ol>
   </aside>
 
-  <article class="book-page">
+  <article class="book-reader">
     <header class="book-page-head">
       <div>
-        <div class="book-meta">{{ page.chapter }} · страница {{ page_index + 1 }} из {{ total }}</div>
+        <div class="book-meta">Математика 6 класс · разворот {{ page_index + 1 }}{% if right_page_index is not none %}-{{ right_page_index + 1 }}{% endif %} из {{ total }}</div>
         <h1>{{ page.title }}</h1>
       </div>
       <button class="book-help" type="button" data-help-page>Помощник</button>
@@ -53,16 +54,40 @@
       <span style="width: {{ ((page_index + 1) / total * 100)|round(1) }}%"></span>
     </div>
 
-    <div class="book-content">{{ content|safe }}</div>
+    <div class="book-stage">
+      <button class="page-turn page-turn-prev" type="button" data-turn-href="{% if prev_index is not none %}{{ book_url(prev_index) }}{% endif %}" {% if prev_index is none %}disabled{% endif %} aria-label="Предыдущий разворот">‹</button>
+      <div class="book-spread" data-book-spread>
+        <section class="book-paper book-paper-left">
+          <div class="paper-number">{{ page_index + 1 }}</div>
+          <div class="book-meta">{{ page.chapter }}</div>
+          <h2>{{ page.title }}</h2>
+          <div class="book-content">{{ content|safe }}</div>
+        </section>
+        <section class="book-paper book-paper-right">
+          {% if right_page %}
+            <div class="paper-number">{{ right_page_index + 1 }}</div>
+            <div class="book-meta">{{ right_page.chapter }}</div>
+            <h2>{{ right_page.title }}</h2>
+            <div class="book-content">{{ right_content|safe }}</div>
+          {% else %}
+            <div class="book-end">
+              <strong>Конец раздела</strong>
+              <span>Ты дошла до последней страницы учебника.</span>
+            </div>
+          {% endif %}
+        </section>
+      </div>
+      <button class="page-turn page-turn-next" type="button" data-turn-href="{% if next_index is not none %}{{ book_url(next_index) }}{% endif %}" {% if next_index is none %}disabled{% endif %} aria-label="Следующий разворот">›</button>
+    </div>
 
     <nav class="book-nav">
       {% if prev_index is not none %}
-        <a class="button secondary" href="{{ book_url(prev_index) }}">Назад</a>
+        <a class="button secondary" data-page-link href="{{ book_url(prev_index) }}">Назад</a>
       {% else %}
         <span></span>
       {% endif %}
       {% if next_index is not none %}
-        <a class="button" href="{{ book_url(next_index) }}">Дальше</a>
+        <a class="button" data-page-link href="{{ book_url(next_index) }}">Дальше</a>
       {% endif %}
     </nav>
   </article>
@@ -80,9 +105,16 @@
     <div class="ai-task" id="aiTask"></div>
     <div class="ai-answer" id="aiAnswer">Выберите задание или нажмите “Помощник”.</div>
     <textarea id="aiQuestion" rows="3" placeholder="Напиши, что именно непонятно"></textarea>
+    <label class="homework-upload">
+      <span>Прикрепить файл с домашкой</span>
+      <input id="homeworkFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt">
+    </label>
     <footer>
-      <button type="button" data-ai-action="explain">Объясни проще</button>
-      <button type="button" data-ai-action="check">Проверь мысль</button>
+      <button type="button" data-ai-action="explain">Объяснить просто</button>
+      <button type="button" data-ai-action="simpler">Проще</button>
+      <button type="button" data-ai-action="simplest">Еще проще</button>
+      <button type="button" data-ai-action="check">Проверить задание</button>
+      <button type="button" data-ai-stop>Остановить</button>
     </footer>
   </form>
 </dialog>

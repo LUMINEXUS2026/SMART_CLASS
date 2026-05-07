@@ -30,6 +30,7 @@
       <nav class="side-nav">
         {% if current_user.is_authenticated and current_user.role == "admin" %}
           <a class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><span>▦</span> Обзор</a>
+          <a class="nav-item {% if request.endpoint == 'admin.schedule' %}active{% endif %}" href="{{ url_for('admin.schedule') }}"><span>▦</span> Расписание</a>
           <a class="nav-item {% if request.endpoint == 'admin.cameras' %}active{% endif %}" href="{{ url_for('admin.cameras') }}"><span>▭</span> Видеонаблюдение</a>
           <a class="nav-item {% if request.endpoint == 'admin.lesson_analysis' %}active{% endif %}" href="{{ url_for('admin.lesson_analysis') }}"><span>▣</span> Анализ урока</a>
           <a class="nav-item {% if request.endpoint == 'admin.events' %}active{% endif %}" href="{{ url_for('admin.events') }}"><span>▢</span> События</a>
@@ -69,10 +70,13 @@
 
       <div class="side-section">
         <h3>Кабинеты</h3>
-        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 301</strong><small>Математика</small></div></div>
-        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 302</strong><small>Физика</small></div></div>
-        <div class="side-list"><span class="dot orange"></span><div><strong>Кабинет 204</strong><small>Информатика</small></div></div>
-        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 310</strong><small>Химия</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 1</strong><small>Михайлова Алена</small></div></div>
+        <div class="side-list"><span class="dot cyan"></span><div><strong>Кабинет 2 · IT</strong><small>Китаев Виктор / IT-направления</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 4</strong><small>Вольченко Елизавета</small></div></div>
+        <div class="side-list"><span class="dot purple"></span><div><strong>Кабинет 5</strong><small>Киреева Ирина</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 6</strong><small>Вольченко Маргарита</small></div></div>
+        <div class="side-list"><span class="dot orange"></span><div><strong>Кабинет 9</strong><small>Максимова Анна</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 11</strong><small>Кравчук Екатерина</small></div></div>
       </div>
 
       <div class="side-section">

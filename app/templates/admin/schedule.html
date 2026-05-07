@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Расписание · EduCam{% endblock %}
+{% block page_title %}Реальное расписание{% endblock %}
+{% block page_subtitle %}Кабинеты, преподаватели, группы и учетные записи учеников из Excel{% endblock %}
+{% block content %}
+<section class="metric-grid">
+  <article class="metric-card"><div class="metric-icon">T</div><div class="metric-value">{{ schedules|map(attribute='teacher_id')|unique|list|length }}</div><div class="metric-label">преподавателей</div></article>
+  <article class="metric-card"><div class="metric-icon">S</div><div class="metric-value">{{ students|length }}</div><div class="metric-label">учеников с аккаунтами</div></article>
+  <article class="metric-card"><div class="metric-icon">R</div><div class="metric-value">{{ schedules|length }}</div><div class="metric-label">слотов расписания</div></article>
+  <article class="metric-card"><div class="metric-icon">E</div><div class="metric-value">{{ enrollments|length }}</div><div class="metric-label">записей на занятия</div></article>
+</section>
+
+<section class="panel">
+  <div class="section-row">
+    <h2>Расписание по кабинетам</h2>
+    <span class="pill">пароль для новых аккаунтов: password</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Кабинет</th>
+        <th>День</th>
+        <th>Время</th>
+        <th>Преподаватель</th>
+        <th>Направление</th>
+        <th>Ученики</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in schedules %}
+        <tr>
+          <td>{{ item.classroom.name }}</td>
+          <td>{{ item.day_of_week }}</td>
+          <td>{{ item.starts_at }}–{{ item.ends_at }}</td>
+          <td>{{ item.teacher.name }}</td>
+          <td><strong>{{ item.subject }}</strong><br><small>{{ item.direction }}</small></td>
+          <td>
+            {% for enrollment in item.enrollments[:6] %}
+              <span class="pill">{{ enrollment.student.name }}</span>
+            {% endfor %}
+            {% if item.enrollments|length > 6 %}
+              <span class="pill">+{{ item.enrollments|length - 6 }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">Расписание еще не импортировано.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <div class="section-row">
+    <h2>Учетные записи учеников</h2>
+    <span class="pill">{{ students|length }} аккаунтов</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Ученик</th>
+        <th>Логин</th>
+        <th>Пароль</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in students %}
+        <tr>
+          <td>{{ student.name }}</td>
+          <td>{{ student.email }}</td>
+          <td>password</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">Учеников пока нет.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

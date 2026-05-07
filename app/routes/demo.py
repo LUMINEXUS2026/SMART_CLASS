@@ -55,6 +55,9 @@ def student_book(lesson_id, page_index):
         page_index = 0
     item = pages[page_index]
     html = render_markdown(resolve_page_path(page_index, item))
+    right_page_index = page_index + 1 if page_index + 1 < len(pages) else None
+    right_page = pages[right_page_index] if right_page_index is not None else None
+    right_content = render_markdown(resolve_page_path(right_page_index, right_page)) if right_page else ""
     create_event(lesson.id, student.id, "student_arrived", "web", {"demo": True})
     db.session.commit()
     return render_template(
@@ -63,14 +66,18 @@ def student_book(lesson_id, page_index):
         student_name=student.name,
         page=item,
         page_index=page_index,
+        right_page=right_page,
+        right_page_index=right_page_index,
+        right_content=right_content,
         total=len(pages),
         pages=pages,
         content=html,
-        prev_index=page_index - 1 if page_index > 0 else None,
-        next_index=page_index + 1 if page_index < len(pages) - 1 else None,
+        prev_index=page_index - 2 if page_index > 1 else (0 if page_index == 1 else None),
+        next_index=page_index + 2 if page_index + 2 < len(pages) else None,
         demo_mode=True,
         activity_url=url_for("demo.demo_textbook_activity", lesson_id=lesson.id),
         status_url=url_for("demo.demo_status", lesson_id=lesson.id),
+        homework_url="",
     )
 
 

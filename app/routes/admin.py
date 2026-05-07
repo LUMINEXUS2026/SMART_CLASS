@@ -5,6 +5,9 @@ from pathlib import Path
 from flask import Blueprint, current_app, jsonify, render_template
 
 from app.models import (
+    Classroom,
+    CourseEnrollment,
+    CourseSchedule,
     Group,
     Lesson,
     LessonEvent,
@@ -72,6 +75,26 @@ def dashboard():
         group_stats=group_stats,
         policy=policy,
         teacher_links=TeacherGroupLink.query.all(),
+    )
+
+
+@admin_bp.get("/schedule")
+@roles_required("admin")
+def schedule():
+    schedules = (
+        CourseSchedule.query
+        .join(CourseSchedule.teacher)
+        .join(CourseSchedule.classroom)
+        .order_by(Classroom.number.asc(), User.name.asc(), CourseSchedule.day_of_week.asc(), CourseSchedule.starts_at.asc())
+        .all()
+    )
+    students = User.query.filter_by(role="student").order_by(User.name.asc()).all()
+    enrollments = CourseEnrollment.query.all()
+    return render_template(
+        "admin/schedule.html",
+        schedules=schedules,
+        students=students,
+        enrollments=enrollments,
     )
 
 

@@ -1,4 +1,7 @@
 from .user import User
+from .classroom import Classroom
+from .course_enrollment import CourseEnrollment
+from .course_schedule import CourseSchedule
 from .group import Group
 from .lesson import Lesson
 from .lesson_participant import LessonParticipant
@@ -13,6 +16,9 @@ from .textbook_activity import TextbookActivity
 
 __all__ = [
     "Group",
+    "Classroom",
+    "CourseEnrollment",
+    "CourseSchedule",
     "Lesson",
     "LessonEvent",
     "LessonParticipant",

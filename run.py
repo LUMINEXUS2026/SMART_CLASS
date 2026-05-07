@@ -5,6 +5,9 @@ from werkzeug.security import generate_password_hash
 from app import create_app
 from app.extensions import db
 from app.models import (
+    Classroom,
+    CourseEnrollment,
+    CourseSchedule,
     Group,
     Lesson,
     LessonEvent,
@@ -31,6 +34,33 @@ def init_db():
 @app.cli.command("seed-demo")
 def seed_demo():
     seed_role_demo()
+
+
+@app.cli.command("import-real-schedule")
+def import_real_schedule_command():
+    from pathlib import Path
+
+    from app.services.schedule_import import import_real_schedule
+
+    downloads = Path.home() / "Downloads"
+    files = []
+    for file_path in downloads.glob("*.xlsx"):
+        escaped_name = file_path.name.encode("unicode_escape").decode("ascii")
+        if "\\u0420\\u0435\\u0433\\u0438" in escaped_name and "\\u041e\\u0442\\u0432" in escaped_name:
+            files.append(file_path)
+
+    if not files:
+        raise SystemExit("Schedule workbook was not found in Downloads.")
+
+    summary = import_real_schedule(max(files, key=lambda item: item.stat().st_mtime))
+    print("Real schedule imported.")
+    print(f"Teachers: {len(summary.teacher_accounts)}")
+    print(f"Students: {summary.students}")
+    print(f"Schedule slots: {summary.schedules}")
+    print(f"Enrollments: {summary.enrollments}")
+    print("Teacher accounts:")
+    for name, email in summary.teacher_accounts.items():
+        print(f"- {name}: {email} / password")
 
 
 @app.cli.command("seed-role-demo")

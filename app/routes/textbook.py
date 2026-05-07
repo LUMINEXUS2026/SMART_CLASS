@@ -2,8 +2,9 @@ import json
 from pathlib import Path
 
 import markdown
-from flask import Blueprint, abort, current_app, render_template, url_for
+from flask import Blueprint, abort, current_app, jsonify, render_template, request, url_for
 from flask_login import current_user
+from werkzeug.utils import secure_filename
 
 from app.models import Lesson
 from app.routes.guards import roles_required
@@ -20,21 +21,44 @@ def page(lesson_id, page_index):
         abort(404)
     item = pages[page_index]
     html = render_markdown(resolve_page_path(page_index, item))
+    right_page_index = page_index + 1 if page_index + 1 < len(pages) else None
+    right_page = pages[right_page_index] if right_page_index is not None else None
+    right_content = render_markdown(resolve_page_path(right_page_index, right_page)) if right_page else ""
     return render_template(
         "textbook/book.html",
         lesson=lesson,
         student_name=current_user.name,
         page=item,
         page_index=page_index,
+        right_page=right_page,
+        right_page_index=right_page_index,
+        right_content=right_content,
         total=len(pages),
         pages=pages,
         content=html,
-        prev_index=page_index - 1 if page_index > 0 else None,
-        next_index=page_index + 1 if page_index < len(pages) - 1 else None,
+        prev_index=page_index - 2 if page_index > 1 else (0 if page_index == 1 else None),
+        next_index=page_index + 2 if page_index + 2 < len(pages) else None,
         demo_mode=False,
         activity_url=url_for("events.textbook_activity", lesson_id=lesson.id),
         status_url=url_for("lessons.status", lesson_id=lesson.id),
+        homework_url=url_for("textbook.homework_upload", lesson_id=lesson.id),
     )
+
+
+@textbook_bp.post("/lesson/<int:lesson_id>/homework")
+@roles_required("student")
+def homework_upload(lesson_id):
+    Lesson.query.get_or_404(lesson_id)
+    uploaded = request.files.get("homework")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"ok": False, "error": "file_required"}), 400
+
+    folder = Path(current_app.instance_path) / "homework_uploads" / str(lesson_id) / str(current_user.id)
+    folder.mkdir(parents=True, exist_ok=True)
+    filename = secure_filename(uploaded.filename) or "homework.bin"
+    target = folder / filename
+    uploaded.save(target)
+    return jsonify({"ok": True, "filename": uploaded.filename})
 
 
 def load_toc():
