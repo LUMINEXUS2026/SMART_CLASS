@@ -1,69 +1,100 @@
 {% extends "base.html" %}
-{% block title %}Кабинет родителя · SMART_CLASS{% endblock %}
+{% block title %}Родитель · EduCam{% endblock %}
 {% block page_title %}Кабинет родителя{% endblock %}
-{% block page_subtitle %}Только данные вашего ребёнка{% endblock %}
+{% block page_subtitle %}Посещаемость, активность, продуктивность и дисциплина ребёнка{% endblock %}
 {% block content %}
-{% for card in child_cards %}
-  <section class="section-head">
-    <div>
-      <h2>{{ card.student.full_name }}</h2>
-      <p>Группа: {{ card.student.group.name }} · текущий статус: <strong>{{ card.latest_status }}</strong></p>
+{% set child = child_snapshot %}
+<section class="section-head">
+  <div>
+    <h2>{{ child.name }}</h2>
+    <p>{{ child.group }} · персональная информация видна только родителю</p>
+  </div>
+  <span class="pill">Личный доступ</span>
+</section>
+
+<section class="metric-grid">
+  <article class="metric-card"><div class="metric-icon">▥</div><div class="metric-value">{{ child.productivity }}%</div><div class="metric-label">Продуктивность</div></article>
+  <article class="metric-card"><div class="metric-icon">◎</div><div class="metric-value">{{ child.activity }}%</div><div class="metric-label">Активность в учебнике</div></article>
+  <article class="metric-card"><div class="metric-icon">✓</div><div class="metric-value">{{ child.attendance }}%</div><div class="metric-label">Посещаемость</div></article>
+  <article class="metric-card"><div class="metric-icon">!</div><div class="metric-value">{{ child.violations }}</div><div class="metric-label">Нарушения дисциплины</div></article>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h2>Сводка по ребёнку</h2>
+    <p>{{ child.teacher_summary }}</p>
+    <div class="mini-metrics">
+      <div><strong>{{ child.late }}</strong><small>опоздания</small></div>
+      <div><strong>{{ child.violations }}</strong><small>замечания</small></div>
+      <div><strong>{{ child.discipline }}%</strong><small>дисциплина</small></div>
+      <div><strong>{{ child.activity }}%</strong><small>учебник</small></div>
     </div>
-    <span class="pill">Личный доступ</span>
-  </section>
+  </div>
 
-  <section class="metric-grid">
-    <article class="metric-card"><div class="metric-value">{{ card.participations|length }}</div><div class="metric-label">Уроков посещено</div></article>
-    <article class="metric-card"><div class="metric-value">{{ card.counts["student_late"] }}</div><div class="metric-label">Опоздания</div></article>
-    <article class="metric-card"><div class="metric-value">{{ card.counts["student_left_during_lesson"] }}</div><div class="metric-label">Выходы во время урока</div></article>
-    <article class="metric-card"><div class="metric-value">{{ card.activity_count }}</div><div class="metric-label">Активность в учебнике</div></article>
-  </section>
+  <div class="panel">
+    <h2>Предметы и активность</h2>
+    <div class="rating-list">
+      {% for subject in child.subjects %}
+        <div class="rating-row">
+          <span>{{ subject.name }}</span>
+          <div class="bar"><span style="width: {{ subject.progress }}%"></span></div>
+          <strong>{{ subject.progress }}%</strong>
+          <small>{{ subject.note }}</small>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
 
-  <section class="grid">
-    <div class="panel">
-      <h2>Уведомления</h2>
-      <div class="event-stack">
+<section class="grid">
+  <div class="panel">
+    <h2>Уведомления</h2>
+    <div class="event-stack">
+      {% for card in child_cards %}
         {% for note in card.notifications %}
-          <div class="event-card">
+          <div class="event-card compact">
             <span class="severity {% if note.level == 'warning' %}warning{% endif %}">{{ note.level }}</span>
             <strong>{{ note.title }}</strong>
             <span>{{ note.message }}</span>
           </div>
-        {% else %}
-          <p>Уведомлений пока нет.</p>
         {% endfor %}
-      </div>
+      {% endfor %}
+      <div class="event-card compact"><span class="severity info">Инфо</span><strong>Динамический учебник</strong><span>Ребёнок прошёл 6 страниц и запросил подсказку 1 раз.</span></div>
     </div>
+  </div>
 
-    <div class="panel">
-      <h2>Итоговая статистика</h2>
-      <table class="data-table">
-        <tr><th>Показатель</th><th>Значение</th></tr>
-        <tr><td>Присутствовал</td><td>{{ "да" if card.counts["student_arrived"] else "нет данных" }}</td></tr>
-        <tr><td>Опоздания</td><td>{{ card.counts["student_late"] }}</td></tr>
-        <tr><td>Отвлечения</td><td>{{ card.counts["distraction_detected"] }}</td></tr>
-        <tr><td>Индикаторы затруднений</td><td>{{ card.counts["difficulty_indicator_detected"] }}</td></tr>
-      </table>
-      <p>Summary: система фиксирует только наблюдаемые события и помогает взрослым увидеть динамику без автоматических выводов.</p>
-    </div>
-  </section>
+  <div class="panel">
+    <h2>Нарушения и посещаемость</h2>
+    <table class="data-table">
+      <tr><th>Показатель</th><th>Значение</th></tr>
+      <tr><td>Опоздания</td><td>{{ child.late }}</td></tr>
+      <tr><td>Выходы из вкладки</td><td>1</td></tr>
+      <tr><td>Использование телефона</td><td>1</td></tr>
+      <tr><td>Посещаемость за неделю</td><td>{{ child.attendance }}%</td></tr>
+    </table>
+    <p>Система показывает наблюдаемые события и не делает автоматических психологических выводов.</p>
+  </div>
+</section>
 
-  <section class="panel">
-    <h2>Последние события ребёнка</h2>
-    <div class="event-stack">
+<section class="panel">
+  <h2>Последние события ребёнка</h2>
+  <div class="event-stack">
+    {% for card in child_cards %}
       {% for event in card.events %}
-        <div class="event-card">
+        <div class="event-card compact">
           <span class="severity">{{ labels[event.event_type] }}</span>
           <strong>{{ event.lesson.title }}</strong>
           <span>{{ event.created_at.strftime("%d.%m %H:%M") }}</span>
         </div>
-      {% else %}
-        <p>Событий пока нет.</p>
       {% endfor %}
-    </div>
-  </section>
-{% else %}
-  <section class="empty">К этому родителю пока не привязан ученик.</section>
-{% endfor %}
+    {% endfor %}
+    {% for event in discipline_events[:3] %}
+      <div class="event-card compact">
+        <span class="severity {{ event.level }}">{{ event.tag }}</span>
+        <strong>{{ event.title }}</strong>
+        <span>{{ event.time }} · {{ event.room }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</section>
 {% endblock %}
-

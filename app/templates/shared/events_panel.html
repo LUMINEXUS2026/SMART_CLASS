@@ -1,0 +1,30 @@
+<div class="filter-row">
+  <select><option>Все уровни</option><option>Внимание</option><option>Критические</option></select>
+  <select><option>Все типы</option><option>Телефон</option><option>Шум</option><option>Низкая вовлечённость</option></select>
+  <select><option>Все кабинеты</option><option>Кабинет 301</option><option>Кабинет 302</option></select>
+  <span class="muted">{{ discipline_events|length }} событий</span>
+</div>
+<section class="event-stack">
+  {% for event in discipline_events %}
+    <article class="event-card event-row {{ event.level }}">
+      <span class="event-icon">!</span>
+      <div>
+        <span class="severity {{ event.level }}">{{ event.tag }}</span>
+        <strong>{{ event.title }}</strong>
+        <p>{{ event.text }}</p>
+        <small>{{ event.room }} · {{ event.time }}</small>
+      </div>
+    </article>
+  {% endfor %}
+  {% for event in events %}
+    <article class="event-card event-row">
+      <span class="event-icon">i</span>
+      <div>
+        <span class="severity">{{ event.event_type }}</span>
+        <strong>{{ event.student.name if event.student else "Система" }}</strong>
+        <p>{{ event.source }} · {{ event.review_status }}</p>
+        <small>{{ event.created_at.strftime("%d.%m %H:%M") }}</small>
+      </div>
+    </article>
+  {% endfor %}
+</section>

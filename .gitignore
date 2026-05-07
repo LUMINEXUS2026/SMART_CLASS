@@ -47,4 +47,6 @@ Thumbs.db
 
 # Project generated artifacts
 lesson_report.txt
-
+*.log
+yolov8*.pt
+app/static/videos/*.mp4

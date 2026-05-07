@@ -11,6 +11,7 @@ from app.models import (
     TextbookActivity,
 )
 from app.routes.guards import roles_required
+from app.services.dashboard_data import discipline_events, parent_child_snapshot
 
 parent_bp = Blueprint("parent", __name__, url_prefix="/parent")
 
@@ -62,4 +63,10 @@ def dashboard():
             }
         )
 
-    return render_template("parent/dashboard.html", child_cards=child_cards, labels=PARENT_VISIBLE_EVENTS)
+    return render_template(
+        "parent/dashboard.html",
+        child_cards=child_cards,
+        labels=PARENT_VISIBLE_EVENTS,
+        child_snapshot=parent_child_snapshot(),
+        discipline_events=discipline_events(),
+    )

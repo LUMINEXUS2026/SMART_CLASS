@@ -14,6 +14,14 @@ from app.models import (
     TextbookActivity,
 )
 from app.routes.guards import roles_required
+from app.services.dashboard_data import (
+    analytics_series,
+    camera_feeds,
+    discipline_events,
+    lesson_analysis as lesson_analysis_data,
+    recent_lessons,
+)
+from app.services.event_service import create_event
 
 teacher_bp = Blueprint("teacher", __name__, url_prefix="/teacher")
 
@@ -32,7 +40,15 @@ def dashboard():
     event_counts = Counter()
     for lesson in lessons:
         event_counts.update(event.event_type for event in lesson.events)
-    return render_template("teacher/dashboard.html", lessons=lessons, groups=groups, event_counts=event_counts)
+    return render_template(
+        "teacher/dashboard.html",
+        lessons=lessons,
+        groups=groups,
+        event_counts=event_counts,
+        recent_lessons=recent_lessons(),
+        discipline_events=discipline_events(),
+        analysis=lesson_analysis_data(),
+    )
 
 
 @teacher_bp.get("/lesson/<int:lesson_id>")
@@ -58,7 +74,37 @@ def lesson_live(lesson_id):
         group_students=group_students,
         events=events,
         activity_by_student=activity_by_student,
+        cameras=[camera for camera in camera_feeds() if camera.room in {"Кабинет 301", "Кабинет 302"}],
+        discipline_events=discipline_events(),
     )
+
+
+@teacher_bp.get("/analytics")
+@roles_required("teacher")
+def analytics():
+    group_ids = [link.group_id for link in TeacherGroupLink.query.filter_by(teacher_id=current_user.id).all()]
+    lessons = (
+        Lesson.query.filter(Lesson.teacher_id == current_user.id, Lesson.group_id.in_(group_ids) if group_ids else Lesson.group_id.is_(None))
+        .order_by(Lesson.starts_at.desc())
+        .limit(20)
+        .all()
+    )
+    return render_template("teacher/analytics.html", lessons=lessons, analytics=analytics_series(), analysis=lesson_analysis_data())
+
+
+@teacher_bp.get("/events")
+@roles_required("teacher")
+def events():
+    lessons = Lesson.query.filter_by(teacher_id=current_user.id).all()
+    lesson_ids = [lesson.id for lesson in lessons]
+    events_query = LessonEvent.query.filter(LessonEvent.lesson_id.in_(lesson_ids)).order_by(LessonEvent.created_at.desc()).limit(80)
+    return render_template("teacher/events.html", events=events_query.all() if lesson_ids else [], discipline_events=discipline_events())
+
+
+@teacher_bp.get("/lesson-plan")
+@roles_required("teacher")
+def lesson_plan():
+    return render_template("teacher/lesson_plan.html", analysis=lesson_analysis_data())
 
 
 @teacher_bp.post("/events/<int:event_id>/review")
@@ -89,6 +135,17 @@ def update_attendance(lesson_id):
         db.session.add(participant)
     participant.attendance_status = status
     participant.manual_note = "Исправлено учителем"
+    create_event(
+        lesson.id,
+        student_id,
+        "attendance_manual_update",
+        "teacher",
+        {
+            "status": status,
+            "participant_id": participant.id,
+            "manual_review_required": False,
+        },
+    )
     db.session.commit()
     return redirect(url_for("teacher.lesson_live", lesson_id=lesson.id))
 

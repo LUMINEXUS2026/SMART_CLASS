@@ -1,0 +1,70 @@
+<section class="analysis-hero panel">
+  <div>
+    <span class="pill">Завершён</span>
+    <span class="muted">{{ analysis.date }}</span>
+    <h2>{{ analysis.title }}</h2>
+    <p>{{ analysis.subject }} | {{ analysis.teacher }} | {{ analysis.time }} | {{ analysis.duration }}</p>
+  </div>
+  <div class="score-big"><span>{{ analysis.score }}</span><small>Общая оценка</small><strong>{{ analysis.score }}/100</strong></div>
+  <div class="lesson-kpis">
+    <div><small>Протокол</small><strong>{{ analysis.protocol_done }} выполнено</strong></div>
+    <div><small>Посещаемость</small><strong>{{ analysis.attendance }} учеников</strong></div>
+    <div><small>Вопросов к классу</small><strong>{{ analysis.questions }}</strong></div>
+    <div><small>Телефоны</small><strong class="danger">{{ analysis.phones }} случая</strong></div>
+    <div><small>Шум</small><strong>{{ analysis.noise }}</strong></div>
+  </div>
+</section>
+
+<section class="panel waveform-panel">
+  <button class="round-play">▷</button>
+  <strong>{{ analysis.audio_position }}</strong><span>/ {{ analysis.audio_total }}</span>
+  <div class="waveform"><span style="width:22%"></span><i style="left:20%"></i><i style="left:48%"></i><i style="left:66%"></i><i style="left:82%"></i></div>
+  <small>Аудио запись урока</small>
+</section>
+
+<div class="tab-strip">
+  <a href="#protocol">▤ Протокол урока</a>
+  <a href="#attendance">♙ Посещаемость</a>
+  <a href="#speech">⌁ Анализ речи</a>
+  <a href="#transcript">▱ Транскрипция</a>
+  <a href="#plan">▣ План урока</a>
+  <a href="#grade">♢ Оценка</a>
+</div>
+
+<section id="protocol" class="panel">
+  <div class="section-row"><h2>Структура урока</h2><span class="pill">6/7</span></div>
+  <div class="plan-list">
+    {% for item in analysis.plan %}
+      <div class="plan-row {{ item.status }}">
+        <span>{% if item.status == "done" %}✓{% else %}×{% endif %}</span>
+        <div><strong>{{ item.title }}</strong> <small>{{ item.time }}</small><p>{{ item.note }}</p></div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="attendance" class="panel">
+  <h2>Посещаемость и внимание</h2>
+  <table class="data-table">
+    <thead><tr><th>Ученик</th><th>Статус</th><th>Внимание</th><th>Телефон</th><th>Отвлечения</th></tr></thead>
+    <tbody>
+      {% for row in analysis.attendance_rows %}
+        <tr><td>{{ row.student }}</td><td><span class="pill">{{ row.status }}</span></td><td><div class="bar small"><span style="width: {{ row.attention }}%"></span></div> {{ row.attention }}%</td><td>{{ row.phone }}</td><td>{{ row.distraction }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section id="speech" class="grid">
+  <div class="panel"><h2>Анализ речи</h2><div class="mini-metrics"><div><strong>{{ analysis.speech.speed }}</strong><small>Скорость речи</small></div><div><strong>{{ analysis.speech.volume }}</strong><small>Громкость</small></div><div><strong>{{ analysis.speech.pauses }}</strong><small>Паузы</small></div><div><strong>{{ analysis.speech.filler_words }}</strong><small>Слова-паразиты</small></div></div></div>
+  <div class="panel"><h2>Взаимодействие с классом</h2><div class="rating-list"><div class="rating-row"><span>Вопросов задано</span><div class="bar"><span style="width:80%"></span></div><strong>{{ analysis.speech.questions_total }}</strong></div><div class="rating-row"><span>Из них к ученикам</span><div class="bar blue"><span style="width:58%"></span></div><strong>{{ analysis.speech.questions_to_students }}</strong></div><div class="rating-row"><span>Похвала / поощрение</span><div class="bar green"><span style="width:42%"></span></div><strong>{{ analysis.speech.praise }}</strong></div><div class="rating-row"><span>Выразительность голоса</span><div class="bar"><span style="width:{{ analysis.speech.expressiveness }}%"></span></div><strong>{{ analysis.speech.expressiveness }}%</strong></div></div></div>
+</section>
+
+<section id="transcript" class="panel">
+  <h2>Расшифровка урока</h2>
+  <div class="transcript">
+    {% for line in analysis.transcript %}
+      <div><time>{{ line.time }}</time><strong>{{ line.speaker }}</strong><span>{{ line.text }}</span></div>
+    {% endfor %}
+  </div>
+</section>

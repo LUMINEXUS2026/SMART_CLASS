@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Кабинет 5 · EduCam{% endblock %}
+{% block page_title %}Кабинет 5 · Английский язык{% endblock %}
+{% block page_subtitle %}Развернутая камера класса · Учитель Киреева Ирина · AI-распознавание включено{% endblock %}
+{% block content %}
+<section class="lesson-shell">
+  <div>
+    <h1>Урок английского языка</h1>
+    <p>Кабинет 5 · Киреева Ирина · демо-видео урока · YOLO: люди и телефоны · OpenCV: лица</p>
+  </div>
+  <div class="actions">
+    <span class="pill">AI ON</span>
+    <a class="button secondary" href="{{ url_for('admin.cameras') }}">Все камеры</a>
+  </div>
+</section>
+
+<section class="expanded-camera-layout">
+  <article class="panel expanded-camera-panel">
+    <div class="video-stage" data-state-url="{{ url_for('admin.classroom_5_camera_state') }}">
+      <video class="lesson-video" src="{{ url_for('static', filename='videos/english_class_demo.mp4') }}" controls muted playsinline preload="metadata" data-stepped-ai-video data-step-frames="4"></video>
+      <span class="rec">● REC</span>
+      <span class="cam-name">{{ camera.name }} · {{ camera.room }}</span>
+      <span class="cam-clock" data-clock>--:--:--</span>
+      <span class="attention-chip" data-attention-chip>AI waiting</span>
+      <span class="det-chip" data-detection-chip>0 persons · 0 phones</span>
+      <canvas class="ai-canvas" data-camera-canvas></canvas>
+      <div class="ai-overlay" data-camera-overlay></div>
+    </div>
+    <footer class="camera-footer">
+      <span class="camera-status"><span class="dot green"></span><strong>{{ camera.name }} · {{ camera.kind }}</strong></span>
+      <span><span class="badge">YOLO</span> {{ camera.resolution }}</span>
+    </footer>
+  </article>
+
+  <aside class="panel">
+    <h2>AI распознавание</h2>
+    <div class="event-stack" data-recognition-list>
+      <div class="event-card compact">
+        <span class="severity info">status</span>
+        <strong>Ожидание AI-воркера</strong>
+        <span>Запустите команду ниже, чтобы включить YOLO, OpenCV и расчет внимания.</span>
+      </div>
+    </div>
+  </aside>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h2>Команда для реального распознавания этого видео</h2>
+    <pre class="code-block">python camera_service/camera_worker.py `
+  --backend http://127.0.0.1:5000 `
+  --lesson-id 1 `
+  --token dev-camera-token `
+  --source "app/static/videos/english_class_demo.mp4" `
+  --camera-name "Кабинет 5-А" `
+  --room "Кабинет 5" `
+  --lesson-title "Английский язык" `
+  --teacher-name "Киреева Ирина" `
+  --faces-dir faces_db `
+  --state-file instance/camera_state/classroom_5.json `
+  --display</pre>
+  </div>
+  <div class="panel">
+    <h2>События урока</h2>
+    <div class="event-stack">
+      {% for event in discipline_events[:4] %}
+        <div class="event-card compact">
+          <span class="severity {{ event.level }}">{{ event.tag }}</span>
+          <strong>{{ event.title }}</strong>
+          <span>{{ event.text }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/camera_detail.js') }}?v=12"></script>
+{% endblock %}
