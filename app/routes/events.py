@@ -3,9 +3,16 @@ from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models import Lesson, LessonEvent, TextbookActivity, User
+from app.services.event_schema import EVENT_DEFINITIONS, SCHEMA_VERSION
 from app.services.event_service import ALLOWED_EVENT_TYPES, create_event
 
 events_bp = Blueprint("events", __name__, url_prefix="/api")
+
+
+@events_bp.get("/event-types")
+@login_required
+def event_types():
+    return jsonify({"schema": SCHEMA_VERSION, "events": EVENT_DEFINITIONS})
 
 
 @events_bp.get("/lessons/<int:lesson_id>/events")
@@ -23,6 +30,8 @@ def list_events(lesson_id):
             "event_type": event.event_type,
             "student": event.student.name if event.student else None,
             "source": event.source,
+            "review_status": event.review_status,
+            "payload": event.payload_json,
             "created_at": event.created_at.isoformat(),
         }
         for event in events
@@ -71,21 +80,53 @@ def textbook_activity(lesson_id):
     if lesson.status != "active":
         return jsonify({"ok": False, "error": "lesson_finished"}), 409
     data = request.get_json(force=True)
+    action = data.get("action", "unknown")
+    duration_sec = int(data.get("duration_sec", 0))
+    payload = data.get("payload") or {}
     activity = TextbookActivity(
         lesson_id=lesson.id,
         student_id=current_user.id,
         page_index=int(data.get("page_index", 0)),
-        action=data.get("action", "unknown"),
-        duration_sec=int(data.get("duration_sec", 0)),
-        payload_json="{}",
+        action=action,
+        duration_sec=duration_sec,
+        payload_json=json_dumps(payload),
     )
     db.session.add(activity)
-    if data.get("action") == "tab_hidden":
+    create_event(
+        lesson.id,
+        current_user.id,
+        "textbook_action",
+        "textbook",
+        {
+            "status": action,
+            "page_index": activity.page_index,
+            "duration_sec": duration_sec,
+            "payload": payload,
+        },
+    )
+    if action == "tab_hidden":
         create_event(lesson.id, current_user.id, "student_left_during_lesson", "web", {"reason": "tab_hidden"})
-    elif data.get("action") == "tab_visible":
+    elif action == "tab_visible":
         create_event(lesson.id, current_user.id, "student_returned_during_lesson", "web", {"reason": "tab_visible"})
-    elif data.get("action") == "help_requested":
+    elif action == "help_requested":
         create_event(lesson.id, current_user.id, "difficulty_indicator_detected", "web", {"reason": "help_requested"})
+    elif action in {"long_idle", "stalled"}:
+        create_event(
+            lesson.id,
+            current_user.id,
+            "inactive",
+            "textbook",
+            {
+                "status": action,
+                "duration_sec": duration_sec,
+                "manual_review_required": duration_sec >= 180,
+            },
+        )
     db.session.commit()
     return jsonify({"ok": True})
 
+
+def json_dumps(payload):
+    import json
+
+    return json.dumps(payload or {}, ensure_ascii=False)

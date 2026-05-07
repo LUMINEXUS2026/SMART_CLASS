@@ -4,6 +4,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
 from app.models import User
+from app.services.attendance_service import record_student_login_presence, record_student_logout
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -26,6 +27,9 @@ def login_post():
         flash("Неверная почта или пароль.")
         return redirect(url_for("auth.login"))
     login_user(user)
+    if user.role == "student":
+        record_student_login_presence(user)
+        db.session.commit()
     return redirect_after_login()
 
 
@@ -65,6 +69,9 @@ def register_post():
 
 @auth_bp.post("/logout")
 def logout():
+    if current_user.is_authenticated and current_user.role == "student":
+        record_student_logout(current_user)
+        db.session.commit()
     logout_user()
     return redirect(url_for("auth.login"))
 

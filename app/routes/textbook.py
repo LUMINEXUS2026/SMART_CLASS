@@ -19,7 +19,7 @@ def page(lesson_id, page_index):
     if page_index < 0 or page_index >= len(pages):
         abort(404)
     item = pages[page_index]
-    html = render_markdown(current_app.config["TEXTBOOK_DIR"] / "pages" / Path(item["file"]).name)
+    html = render_markdown(resolve_page_path(page_index, item))
     return render_template(
         "textbook/book.html",
         lesson=lesson,
@@ -61,3 +61,20 @@ def render_markdown(path):
         return "<h1>Страница учебника не найдена</h1>"
     text = path.read_text(encoding="utf-8")
     return markdown.markdown(text, extensions=["tables", "fenced_code"])
+
+
+def resolve_page_path(page_index, item):
+    pages_dir = current_app.config["TEXTBOOK_DIR"] / "pages"
+    toc_path = pages_dir / Path(item["file"]).name
+    if toc_path.exists():
+        return toc_path
+
+    prefix = f"{page_index + 1:02d}_"
+    matches = sorted(path for path in pages_dir.glob("*.md") if path.name.startswith(prefix))
+    if matches:
+        return matches[0]
+
+    all_pages = sorted(pages_dir.glob("*.md"))
+    if 0 <= page_index < len(all_pages):
+        return all_pages[page_index]
+    return toc_path

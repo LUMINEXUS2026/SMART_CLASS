@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Luminexus">
+  <defs>
+    <linearGradient id="lx" x1="32" y1="40" x2="210" y2="202" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22f3ff"/>
+      <stop offset=".52" stop-color="#4aa3ff"/>
+      <stop offset="1" stop-color="#f04cf8"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="240" height="240" rx="54" fill="#07051a"/>
+  <g fill="none" stroke="url(#lx)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path d="M65 146 45 111 68 72h47"/>
+    <path d="M77 156h40l22-39-22-38H77"/>
+    <path d="M103 126h36l28 24h31"/>
+    <path d="M114 97h32l23-24h18"/>
+    <path d="M91 174h75l27-45"/>
+    <path d="M82 118h27"/>
+    <path d="M151 93v38l-32 18"/>
+  </g>
+  <g fill="url(#lx)" filter="url(#glow)">
+    <circle cx="70" cy="72" r="13"/>
+    <circle cx="188" cy="73" r="10"/>
+    <circle cx="198" cy="150" r="12"/>
+    <circle cx="91" cy="174" r="10"/>
+  </g>
+  <text x="120" y="218" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" letter-spacing="3" fill="url(#lx)">LUMINEXUS</text>
+</svg>

@@ -7,6 +7,8 @@
   const activityUrl = root.dataset.activityUrl || `/api/lessons/${lessonId}/textbook-activity`;
   const statusUrl = root.dataset.statusUrl || `/lessons/${lessonId}/status`;
   let openedAt = Date.now();
+  let lastInteractionAt = Date.now();
+  let longIdleSent = false;
 
   async function sendActivity(action, payload = {}) {
     const durationSec = Math.max(0, Math.round((Date.now() - openedAt) / 1000));
@@ -23,6 +25,13 @@
   }
 
   sendActivity("page_opened");
+
+  ["click", "keydown", "scroll", "pointermove"].forEach((eventName) => {
+    document.addEventListener(eventName, () => {
+      lastInteractionAt = Date.now();
+      longIdleSent = false;
+    }, { passive: true });
+  });
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
@@ -48,6 +57,12 @@
     if (event.target.closest(".askAI")) {
       sendActivity("help_requested");
     }
+    if (event.target.closest("[data-task-start]")) {
+      sendActivity("task_started");
+    }
+    if (event.target.closest("[data-task-complete]")) {
+      sendActivity("task_completed");
+    }
   });
 
   async function checkLessonStatus() {
@@ -67,4 +82,12 @@
   }
 
   setInterval(checkLessonStatus, 4000);
+
+  setInterval(() => {
+    const idleSec = Math.round((Date.now() - lastInteractionAt) / 1000);
+    if (idleSec >= 90 && !longIdleSent) {
+      longIdleSent = true;
+      sendActivity("long_idle", { idle_sec: idleSec });
+    }
+  }, 15000);
 })();

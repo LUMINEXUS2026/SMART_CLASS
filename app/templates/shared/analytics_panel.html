@@ -1,0 +1,48 @@
+<section class="panel">
+  <h2>Вовлечённость и внимание за учебный день</h2>
+  <div class="line-chart">
+    {% for value in analytics.attention %}
+      <span class="line-point attention" style="height: {{ value }}%"></span>
+    {% endfor %}
+    {% for value in analytics.engagement %}
+      <span class="line-point engagement" style="height: {{ value }}%"></span>
+    {% endfor %}
+  </div>
+  <div class="chart-legend"><span class="dot green"></span>Внимание <span class="dot purple"></span>Вовлечённость</div>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h2>Посещаемость по кабинетам</h2>
+    <div class="stack-bars">
+      {% for room in analytics.attendance_by_room %}
+        <div class="stack-row">
+          <small>{{ room.room }}</small>
+          <div class="stack-bar">
+            <span class="present" style="width: {{ room.present * 3 }}%"></span>
+            <span class="late" style="width: {{ room.late * 3 }}%"></span>
+            <span class="absent" style="width: {{ room.absent * 3 }}%"></span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="chart-legend"><span class="dot green"></span>Присутствуют <span class="dot orange"></span>Опоздали <span class="dot red-dot"></span>Отсутствуют</div>
+  </div>
+  <div class="panel">
+    <h2>Соответствие нормам</h2>
+    <div class="donut"></div>
+    <div class="chart-legend"><span class="dot orange"></span>Незначительные <span class="dot green"></span>Соответствие <span class="dot red-dot"></span>Серьёзные</div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Карта вовлечённости</h2>
+  <div class="heatmap">
+    {% for row in analytics.heatmap %}
+      {% for value in row %}
+        <span class="heat heat-{{ value // 10 }}">{{ value }}</span>
+      {% endfor %}
+    {% endfor %}
+  </div>
+  <div class="chart-legend">1-8 уроки · Пн-Пт</div>
+</section>

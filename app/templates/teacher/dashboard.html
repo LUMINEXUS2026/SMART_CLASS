@@ -1,61 +1,61 @@
 {% extends "base.html" %}
-{% block title %}Обзор · SMART_CLASS{% endblock %}
-{% block page_title %}Обзор{% endblock %}
-{% block page_subtitle %}Live-аналитика уроков и камер{% endblock %}
+{% block title %}Учитель · EduCam{% endblock %}
+{% block page_title %}Учитель{% endblock %}
+{% block page_subtitle %}Аналитика занятий, дисциплина и план текущего урока{% endblock %}
 {% block content %}
 <section class="metric-grid">
-  <article class="metric-card"><div class="metric-icon">▦</div><div class="metric-value">{{ lessons|length }}</div><div class="metric-label">Мои уроки</div></article>
-  <article class="metric-card"><div class="metric-icon">◎</div><div class="metric-value">{{ groups|length }}</div><div class="metric-label">Мои группы</div></article>
-  <article class="metric-card"><div class="metric-icon">◉</div><div class="metric-value">{{ event_counts["student_arrived"] }}</div><div class="metric-label">Пришли</div></article>
-  <article class="metric-card"><div class="metric-icon">!</div><div class="metric-value">{{ event_counts["difficulty_indicator_detected"] }}</div><div class="metric-label">Индикаторы трудностей</div></article>
+  <article class="metric-card"><div class="metric-icon">▣</div><div class="metric-value">{{ lessons|length }}</div><div class="metric-label">Мои уроки</div></article>
+  <article class="metric-card"><div class="metric-icon">◎</div><div class="metric-value">{{ analysis.score }}/100</div><div class="metric-label">Оценка последнего урока</div></article>
+  <article class="metric-card"><div class="metric-icon">▥</div><div class="metric-value">{{ analysis.speech.expressiveness }}%</div><div class="metric-label">Выразительность речи</div></article>
+  <article class="metric-card"><div class="metric-icon">!</div><div class="metric-value">{{ discipline_events|length }}</div><div class="metric-label">События дисциплины</div></article>
 </section>
 
-<section class="section-head">
-  <div>
-    <h2>Уроки сегодня</h2>
-    <p>Создайте урок или откройте live-наблюдение.</p>
-  </div>
-  <form method="post" action="{{ url_for('lessons.create_lesson') }}" class="inline-form">
-    <input name="title" placeholder="Название урока" value="Математика 6 класс">
-    <input name="subject" placeholder="Предмет" value="Математика">
-    <select name="group_id">
-      {% for group in groups %}
-        <option value="{{ group.id }}">{{ group.name }}</option>
+<section class="admin-overview-grid">
+  <div class="panel">
+    <div class="section-row">
+      <h2>Мои уроки сегодня</h2>
+      <a href="{{ url_for('teacher.analytics') }}">Аналитика →</a>
+    </div>
+    <div class="lesson-list">
+      {% for lesson in lessons %}
+        <a class="lesson-row" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">
+          <span class="score-ring">{{ analysis.score }}</span>
+          <span><strong>{{ lesson.subject }}</strong><small>{{ lesson.title }} | {{ lesson.starts_at.strftime("%H:%M") }} | {{ lesson.status }}</small></span>
+          <span class="pill">Открыть</span>
+        </a>
+      {% else %}
+        {% for item in recent_lessons[:3] %}
+          <div class="lesson-row">
+            <span class="score-ring">{{ item.score }}</span>
+            <span><strong>{{ item.subject }}</strong><small>{{ item.topic }} | {{ item.time }}</small></span>
+            <span class="pill">{{ item.status }}</span>
+          </div>
+        {% endfor %}
       {% endfor %}
-    </select>
-    <button type="submit">Создать урок</button>
-  </form>
-</section>
+    </div>
+  </div>
 
-<div class="grid">
-  <div class="list">
-    {% for lesson in lessons %}
-      <article class="item">
-        <div>
-          <h2>{{ lesson.title }}</h2>
-          <p>{{ lesson.subject }} · {{ lesson.status }} · {{ lesson.starts_at.strftime("%d.%m.%Y %H:%M") }}</p>
-        </div>
-        <a class="button" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">Открыть урок</a>
-      </article>
-    {% else %}
-      <div class="empty">Уроков пока нет.</div>
-    {% endfor %}
+  <div class="panel">
+    <h2>Отслеживание плана занятия</h2>
+    <div class="plan-list">
+      {% for item in analysis.plan[:5] %}
+        <div class="plan-row {{ item.status }}"><span>{% if item.status == "done" %}✓{% else %}×{% endif %}</span><div><strong>{{ item.title }}</strong><small>{{ item.time }}</small></div></div>
+      {% endfor %}
+    </div>
+    <a class="button secondary" href="{{ url_for('teacher.lesson_plan') }}">Открыть план</a>
   </div>
 
   <aside class="panel">
-    <h2>Последние события</h2>
+    <h2>Нарушения дисциплины</h2>
     <div class="event-stack">
-      <div class="event-card">
-        <span class="severity warning">Внимание</span>
-        <strong>Мои события уроков</strong>
-        <span>Отображаются только группы, привязанные к учителю.</span>
-      </div>
-      <div class="event-card">
-        <span class="severity">Инфо</span>
-        <strong>Ученик вернулся в учебник</strong>
-        <span>Событие зафиксировано web-трекером</span>
-      </div>
+      {% for event in discipline_events[:5] %}
+        <div class="event-card compact">
+          <span class="severity {{ event.level }}">{{ event.tag }}</span>
+          <strong>{{ event.title }}</strong>
+          <span>{{ event.room }} · {{ event.time }}</span>
+        </div>
+      {% endfor %}
     </div>
   </aside>
-</div>
+</section>
 {% endblock %}

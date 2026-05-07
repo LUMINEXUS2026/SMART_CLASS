@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}SMART_CLASS{% endblock %}</title>
+  <title>{% block title %}EduCam · Luminexus{% endblock %}</title>
+  <script>
+    document.documentElement.dataset.theme = localStorage.getItem("educam-theme") || "dark";
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   {% block head %}{% endblock %}
 </head>
@@ -13,77 +16,93 @@
       <div class="window-dots" aria-hidden="true">
         <span></span><span></span><span></span>
       </div>
-      <a class="side-brand" href="{{ url_for('demo.home') }}">
-        <span class="brand-icon">SC</span>
+
+      <a class="side-brand" href="{% if current_user.is_authenticated and current_user.role == 'admin' %}{{ url_for('admin.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'teacher' %}{{ url_for('teacher.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'parent' %}{{ url_for('parent.dashboard') }}{% else %}{{ url_for('demo.home') }}{% endif %}">
+        <span class="brand-icon">◎</span>
         <span>
-          <strong>SMART_CLASS</strong>
+          <img class="brand-logo" src="{{ url_for('static', filename='img/luminexus-logo.svg') }}" alt="Luminexus">
+          <strong>EduCam</strong>
           <small>Образовательная аналитика</small>
         </span>
       </a>
-      <div class="school-name">MVP-1 EDUCAM</div>
+      <div class="school-name">Центр дополнительного образования «Моя Райская птица»</div>
 
       <nav class="side-nav">
-        <a class="nav-item {% if request.endpoint in ['teacher.dashboard', 'demo.home'] %}active{% endif %}" href="{{ url_for('demo.home') }}">
-          <span>▦</span> Обзор
-        </a>
-        {% if request.path.startswith('/demo') %}
-          <a class="nav-item {% if 'teacher' in request.path %}active{% endif %}" href="{{ url_for('demo.teacher_live', lesson_id=lesson.id if lesson is defined else 1) }}">
-            <span>▭</span> Видеонаблюдение
-          </a>
-          <a class="nav-item" href="{{ url_for('demo.student_book', lesson_id=lesson.id if lesson is defined else 1, page_index=0) }}">
-            <span>▤</span> Учебник
-          </a>
+        {% if current_user.is_authenticated and current_user.role == "admin" %}
+          <a class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><span>▦</span> Обзор</a>
+          <a class="nav-item {% if request.endpoint == 'admin.cameras' %}active{% endif %}" href="{{ url_for('admin.cameras') }}"><span>▭</span> Видеонаблюдение</a>
+          <a class="nav-item {% if request.endpoint == 'admin.lesson_analysis' %}active{% endif %}" href="{{ url_for('admin.lesson_analysis') }}"><span>▣</span> Анализ урока</a>
+          <a class="nav-item {% if request.endpoint == 'admin.events' %}active{% endif %}" href="{{ url_for('admin.events') }}"><span>▢</span> События</a>
+          <a class="nav-item {% if request.endpoint == 'admin.analytics' %}active{% endif %}" href="{{ url_for('admin.analytics') }}"><span>▥</span> Аналитика</a>
+          <a class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" href="{{ url_for('admin.settings') }}"><span>⚙</span> Настройки</a>
+        {% elif current_user.is_authenticated and current_user.role == "teacher" %}
+          <a class="nav-item {% if request.endpoint == 'teacher.dashboard' %}active{% endif %}" href="{{ url_for('teacher.dashboard') }}"><span>▦</span> Обзор</a>
+          <a class="nav-item {% if request.endpoint == 'teacher.lesson_live' %}active{% endif %}" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id if lesson is defined else (lessons[0].id if lessons is defined and lessons else 1)) }}"><span>▭</span> Видеонаблюдение</a>
+          <a class="nav-item {% if request.endpoint == 'teacher.analytics' %}active{% endif %}" href="{{ url_for('teacher.analytics') }}"><span>▥</span> Аналитика занятий</a>
+          <a class="nav-item {% if request.endpoint == 'teacher.events' %}active{% endif %}" href="{{ url_for('teacher.events') }}"><span>▢</span> Нарушения дисциплины</a>
+          <a class="nav-item {% if request.endpoint == 'teacher.lesson_plan' %}active{% endif %}" href="{{ url_for('teacher.lesson_plan') }}"><span>▤</span> План занятия</a>
+        {% elif current_user.is_authenticated and current_user.role == "parent" %}
+          <a class="nav-item {% if request.endpoint == 'parent.dashboard' %}active{% endif %}" href="{{ url_for('parent.dashboard') }}"><span>▦</span> Ребёнок</a>
+        {% elif request.path.startswith('/demo') %}
+          <a class="nav-item {% if request.endpoint == 'demo.home' %}active{% endif %}" href="{{ url_for('demo.home') }}"><span>▦</span> Обзор</a>
+          <a class="nav-item {% if 'teacher' in request.path %}active{% endif %}" href="{{ url_for('demo.teacher_live', lesson_id=lesson.id if lesson is defined else 1) }}"><span>▭</span> Видеонаблюдение</a>
+          <a class="nav-item" href="{{ url_for('demo.student_book', lesson_id=lesson.id if lesson is defined else 1, page_index=0) }}"><span>▤</span> Учебник</a>
         {% else %}
-          <a class="nav-item {% if request.endpoint == 'teacher.lesson_live' %}active{% endif %}" href="{{ url_for('teacher.dashboard') }}">
-            <span>▭</span> Видеонаблюдение
-          </a>
+          <a class="nav-item active" href="{{ url_for('auth.login') }}"><span>▦</span> Вход</a>
+          <a class="nav-item" href="{{ url_for('demo.home') }}"><span>▭</span> Демо</a>
         {% endif %}
-        <a class="nav-item {% if request.endpoint == 'reports.lesson_report' %}active{% endif %}" href="#">
-          <span>▣</span> Анализ урока
-        </a>
-        <a class="nav-item" href="#">
-          <span>▢</span> События
-        </a>
-        <a class="nav-item" href="#">
-          <span>▥</span> Аналитика
-        </a>
-        <a class="nav-item" href="#">
-          <span>⚙</span> Настройки
-        </a>
       </nav>
 
       <div class="side-section">
-        <h3>Последние уроки</h3>
-        <div class="side-list">
-          <span class="dot purple"></span>
-          <div><strong>Математика</strong><small>09:00 | Активен</small></div>
-        </div>
-        <div class="side-list">
-          <span class="dot green"></span>
-          <div><strong>Русский язык</strong><small>10:00 | Оценка: 91</small></div>
-        </div>
-        <div class="side-list">
-          <span class="dot orange"></span>
-          <div><strong>Информатика</strong><small>11:00 | Идёт запись</small></div>
-        </div>
+        {% if current_user.is_authenticated and current_user.role == "parent" %}
+          <h3>Ребёнок</h3>
+          <div class="side-list"><span class="dot green"></span><div><strong>Абрамова А.</strong><small>6А · активность 91%</small></div></div>
+          <div class="side-list"><span class="dot orange"></span><div><strong>Опоздания</strong><small>1 за неделю</small></div></div>
+          <div class="side-list"><span class="dot purple"></span><div><strong>Продуктивность</strong><small>84%</small></div></div>
+        {% else %}
+          <h3>Последние уроки</h3>
+          <div class="side-list"><span class="dot purple"></span><div><strong>Математика</strong><small>09:00 | Оценка: 82</small></div></div>
+          <div class="side-list"><span class="dot green"></span><div><strong>Русский язык</strong><small>09:00 | Оценка: 91</small></div></div>
+          <div class="side-list"><span class="dot orange"></span><div><strong>Информатика</strong><small>11:00 | Идёт запись</small></div></div>
+        {% endif %}
       </div>
 
       <div class="side-section">
         <h3>Кабинеты</h3>
-        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 301</strong><small>Учитель + ученики</small></div></div>
-        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 302</strong><small>Онлайн</small></div></div>
-        <div class="side-list"><span class="dot muted-dot"></span><div><strong>Кабинет 204</strong><small>Оффлайн</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 301</strong><small>Математика</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 302</strong><small>Физика</small></div></div>
+        <div class="side-list"><span class="dot orange"></span><div><strong>Кабинет 204</strong><small>Информатика</small></div></div>
+        <div class="side-list"><span class="dot green"></span><div><strong>Кабинет 310</strong><small>Химия</small></div></div>
+      </div>
+
+      <div class="side-section">
+        {% if current_user.is_authenticated %}
+          <h3>Роль</h3>
+          <div class="side-list"><span class="dot purple"></span><div><strong>{{ current_user.name }}</strong><small>{{ current_user.role }}</small></div></div>
+        {% else %}
+          <h3>Тестовые входы</h3>
+          <div class="side-list"><span class="dot purple"></span><div><strong>admin@example.com</strong><small>password</small></div></div>
+          <div class="side-list"><span class="dot green"></span><div><strong>teacher1@example.com</strong><small>password</small></div></div>
+          <div class="side-list"><span class="dot orange"></span><div><strong>parent1@example.com</strong><small>password</small></div></div>
+        {% endif %}
       </div>
     </aside>
 
     <div class="main-shell">
       <header class="topbar">
         <div>
-          <h1>{% block page_title %}SMART_CLASS{% endblock %}</h1>
+          <h1>{% block page_title %}EduCam{% endblock %}</h1>
           <p>{% block page_subtitle %}{% endblock %}</p>
         </div>
         <div class="topbar-right">
-          <div class="clock" data-clock>--:--:--</div>
+          <button class="theme-toggle" type="button" data-theme-toggle aria-label="Change color theme">
+            <span data-theme-icon>Night</span>
+            <span data-theme-text>Dark</span>
+          </button>
+          <div>
+            <div class="clock" data-clock>--:--:--</div>
+            <small class="date-label">Пятница, 1 Мая 2026 г.</small>
+          </div>
           {% if current_user.is_authenticated %}
             <span class="user-chip">{{ current_user.name }} · {{ current_user.role }}</span>
             <form method="post" action="{{ url_for('auth.logout') }}">

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Урок · SMART_CLASS{% endblock %}
+{% block title %}Урок · EduCam{% endblock %}
 {% block content %}
 <section class="lesson-shell" data-lesson-id="{{ lesson.id }}" data-status-url="{{ url_for('lessons.status', lesson_id=lesson.id) }}">
   <div>
@@ -16,4 +16,3 @@
 </section>
 <script src="{{ url_for('static', filename='js/lesson_student.js') }}"></script>
 {% endblock %}
-

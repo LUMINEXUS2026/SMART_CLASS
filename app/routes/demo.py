@@ -1,11 +1,9 @@
-from pathlib import Path
-
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, url_for
 from werkzeug.security import generate_password_hash
 
 from app.extensions import db
 from app.models import Lesson, LessonEvent, Student, TextbookActivity, User
-from app.routes.textbook import flatten_pages, load_toc, render_markdown
+from app.routes.textbook import flatten_pages, load_toc, render_markdown, resolve_page_path
 from app.services.event_service import create_event
 from app.services.lesson_service import finish_lesson
 
@@ -56,7 +54,7 @@ def student_book(lesson_id, page_index):
     if page_index < 0 or page_index >= len(pages):
         page_index = 0
     item = pages[page_index]
-    html = render_markdown(current_app.config["TEXTBOOK_DIR"] / "pages" / Path(item["file"]).name)
+    html = render_markdown(resolve_page_path(page_index, item))
     create_event(lesson.id, student.id, "student_arrived", "web", {"demo": True})
     db.session.commit()
     return render_template(
