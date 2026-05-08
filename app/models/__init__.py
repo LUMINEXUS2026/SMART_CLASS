@@ -7,12 +7,14 @@ from .lesson import Lesson
 from .lesson_participant import LessonParticipant
 from .lesson_event import LessonEvent
 from .lesson_summary import LessonSummary
+from .lesson_textbook_state import LessonTextbookState
 from .notification import Notification
 from .parent_student_link import ParentStudentLink
 from .policy_settings import PolicySettings
 from .student import Student
 from .teacher_group_link import TeacherGroupLink
 from .textbook_activity import TextbookActivity
+from .textbook_answer import TextbookAnswer
 
 __all__ = [
     "Group",
@@ -23,11 +25,13 @@ __all__ = [
     "LessonEvent",
     "LessonParticipant",
     "LessonSummary",
+    "LessonTextbookState",
     "Notification",
     "ParentStudentLink",
     "PolicySettings",
     "Student",
     "TeacherGroupLink",
     "TextbookActivity",
+    "TextbookAnswer",
     "User",
 ]

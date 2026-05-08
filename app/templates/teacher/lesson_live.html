@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Видеонаблюдение · EduCam{% endblock %}
-{% block page_title %}Видеонаблюдение{% endblock %}
-{% block page_subtitle %}Камеры учителя и учеников, события дисциплины и активность учебника{% endblock %}
+{% block title %}Урок · EduCam{% endblock %}
+{% block page_title %}Управление уроком{% endblock %}
+{% block page_subtitle %}Тема учебника, режим работы, присутствие и события урока{% endblock %}
 {% block content %}
 {% set live_events_url = events_url|default(url_for('events.list_events', lesson_id=lesson.id)) %}
 {% set live_finish_url = finish_url|default(url_for('lessons.finish', lesson_id=lesson.id)) %}
@@ -9,53 +9,55 @@
 <section class="lesson-shell" data-lesson-id="{{ lesson.id }}" data-events-url="{{ live_events_url }}">
   <div>
     <h1>{{ lesson.title }}</h1>
-    <p>{{ lesson.subject }} · статус: {{ lesson.status }} · кабинет 301 · live-потоки готовы к RTSP</p>
+    <p>{{ lesson.subject }} · статус: {{ lesson.status }}</p>
   </div>
   <div class="actions">
-    <a class="button secondary" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник</a>
+    <a class="button secondary" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=(textbook_state.assigned_page_index if textbook_state else 0)) }}">Учебник</a>
     <a class="button secondary" href="{{ url_for('teacher.analytics') }}">Аналитика</a>
     {% if lesson.status == "active" %}
       <form method="post" action="{{ live_finish_url }}"><button type="submit">Завершить урок</button></form>
     {% else %}
-      <a class="button" href="{{ url_for('reports.lesson_report', lesson_id=lesson.id) }}">Отчёт</a>
+      <a class="button" href="{{ url_for('reports.lesson_report', lesson_id=lesson.id) }}">Отчет</a>
     {% endif %}
   </div>
 </section>
 
-<div class="camera-tabs">
-  <span class="label">Кабинет:</span>
-  <button class="btn">Все камеры</button>
-  <button class="btn ghost">Кабинет 301</button>
-  <button class="btn ghost">Камера учителя</button>
-  <button class="btn ghost">Камера учеников</button>
-</div>
+<section class="panel">
+  <div class="section-row">
+    <div>
+      <h2>Тема урока и режим работы</h2>
+      <p>
+        Сейчас:
+        <strong>{{ textbook_state.assigned_title if textbook_state else "Математика 6 класс · страница 1" }}</strong>
+        ·
+        <strong>
+          {% if textbook_state and textbook_state.study_mode == "control" %}контрольная работа
+          {% elif textbook_state and textbook_state.study_mode == "independent" %}самостоятельная работа
+          {% else %}учебник доступен{% endif %}
+        </strong>
+      </p>
+    </div>
+    <form method="post" action="{{ url_for('teacher.assign_textbook_topic', lesson_id=lesson.id) }}" class="mini-form">
+      <select name="page_index">
+        {% for item in textbook_pages %}
+          <option value="{{ loop.index0 }}" {% if textbook_state and textbook_state.assigned_page_index == loop.index0 %}selected{% endif %}>
+            {{ loop.index }}. {{ item.title }}
+          </option>
+        {% endfor %}
+      </select>
+      <button class="btn" name="study_mode" value="textbook" type="submit">Назначить как тему урока</button>
+      <button class="btn ghost" name="study_mode" value="independent" type="submit">Самостоятельная работа</button>
+      <button class="btn ghost" name="study_mode" value="control" type="submit">Контрольная работа</button>
+    </form>
+  </div>
+</section>
 
 <section class="camera-layout">
   <div class="camera-grid">
-    {% for camera in cameras|default([]) %}
-      <article class="camera-card {% if camera.featured %}featured-camera{% endif %}">
-        <div class="camera-feed classroom">
-          <span class="scan-line"></span>
-          <span class="rec">● REC</span>
-          <span class="cam-name">{{ camera.name }}</span>
-          <span class="cam-clock" data-clock>--:--:--</span>
-          <span class="attention-chip">{{ camera.attention }}% ATTENTION</span>
-          <span class="det-chip">{{ camera.detections }} det</span>
-        </div>
-        <footer class="camera-footer">
-          <span class="camera-status"><span class="dot green"></span><strong>{{ camera.name }} ({{ camera.kind }})</strong></span>
-          <span><span class="badge">YOLO</span> {{ camera.resolution }}</span>
-        </footer>
-      </article>
-    {% else %}
-      <article class="camera-card"><div class="camera-feed teacher"><span class="scan-line"></span><span class="rec">● REC</span><span class="cam-name">Камера 1 · Учитель</span><span class="cam-clock" data-clock>--:--:--</span><span class="attention-chip">teacher zone 92%</span></div></article>
-      <article class="camera-card"><div class="camera-feed students"><span class="scan-line"></span><span class="rec">● REC</span><span class="cam-name">Камера 2 · Ученики</span><span class="cam-clock" data-clock>--:--:--</span><span class="attention-chip">attention 74%</span></div></article>
-    {% endfor %}
-
     <div class="panel">
       <h2>Ученики в уроке</h2>
       <table class="data-table">
-        <thead><tr><th>Ученик</th><th>Статус</th><th>Учебник</th><th>Исправить</th></tr></thead>
+        <thead><tr><th>Ученик</th><th>Статус</th><th>Активность</th><th>Исправить</th></tr></thead>
         <tbody>
           {% for student in group_students %}
             {% set participant = participants|selectattr("student_id", "equalto", student.user_id)|first %}
@@ -88,24 +90,15 @@
       <div class="mini-metrics">
         <div><strong>74%</strong><small>внимание</small></div>
         <div><strong>88%</strong><small>следование плану</small></div>
-        <div><strong>4</strong><small>телефоны</small></div>
-        <div><strong>62 дБ</strong><small>шум</small></div>
+        <div><strong>{{ participants|length }}</strong><small>участников</small></div>
+        <div><strong>{{ activity_by_student.values()|sum }}</strong><small>действий в учебнике</small></div>
       </div>
     </div>
   </div>
 
   <aside class="panel">
-    <h2>Текущие события</h2>
+    <h2>События урока</h2>
     <div class="event-stack" id="eventList">
-      {% for event in (discipline_events|default([])) %}
-        {% if loop.index <= 4 %}
-        <div class="event-card compact">
-          <span class="severity {{ event.level }}">{{ event.tag }}</span>
-          <strong>{{ event.title }}</strong>
-          <span>{{ event.room }} · {{ event.time }}</span>
-        </div>
-        {% endif %}
-      {% endfor %}
       {% for event in events %}
         <div class="event-card">
           <span class="severity {% if 'left' in event.event_type %}warning{% endif %}">{{ event.event_type }}</span>
@@ -116,6 +109,8 @@
             <button class="btn ghost" name="action" value="rejected" type="submit">Отклонить</button>
           </form>
         </div>
+      {% else %}
+        <div class="event-card compact"><strong>Пока нет событий</strong><span>События появятся во время урока.</span></div>
       {% endfor %}
     </div>
   </aside>

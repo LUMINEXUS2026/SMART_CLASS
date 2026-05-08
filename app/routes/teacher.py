@@ -9,11 +9,13 @@ from app.models import (
     Lesson,
     LessonEvent,
     LessonParticipant,
+    LessonTextbookState,
     Student,
     TeacherGroupLink,
     TextbookActivity,
 )
 from app.routes.guards import roles_required
+from app.routes.textbook import flatten_pages, load_toc
 from app.services.dashboard_data import (
     analytics_series,
     camera_feeds,
@@ -76,7 +78,40 @@ def lesson_live(lesson_id):
         activity_by_student=activity_by_student,
         cameras=[camera for camera in camera_feeds() if camera.room in {"Кабинет 301", "Кабинет 302"}],
         discipline_events=discipline_events(),
+        textbook_pages=flatten_pages(load_toc()),
+        textbook_state=LessonTextbookState.query.filter_by(lesson_id=lesson.id).first(),
     )
+
+
+@teacher_bp.post("/lesson/<int:lesson_id>/textbook-topic")
+@roles_required("teacher")
+def assign_textbook_topic(lesson_id):
+    lesson = get_teacher_lesson_or_404(lesson_id)
+    pages = flatten_pages(load_toc())
+    page_index = request.form.get("page_index", type=int)
+    study_mode = request.form.get("study_mode", "textbook")
+    if page_index is None or page_index < 0 or page_index >= len(pages):
+        abort(400)
+    if study_mode not in {"textbook", "independent", "control"}:
+        abort(400)
+
+    state = LessonTextbookState.query.filter_by(lesson_id=lesson.id).first()
+    if not state:
+        state = LessonTextbookState(lesson_id=lesson.id)
+        db.session.add(state)
+    state.assigned_page_index = page_index
+    state.assigned_title = pages[page_index]["title"]
+    state.study_mode = study_mode
+    state.updated_by_id = current_user.id
+    create_event(
+        lesson.id,
+        None,
+        "textbook_topic_assigned",
+        "teacher",
+        {"page_index": page_index, "title": state.assigned_title, "study_mode": study_mode},
+    )
+    db.session.commit()
+    return redirect(url_for("teacher.lesson_live", lesson_id=lesson.id))
 
 
 @teacher_bp.get("/analytics")

@@ -75,6 +75,11 @@ EVENT_DEFINITIONS = {
         "review": "auto",
         "required": ["lesson_id", "user_id", "timestamp", "status"],
     },
+    "textbook_topic_assigned": {
+        "description": "Teacher assigned the active textbook topic for the whole class.",
+        "review": "auto",
+        "required": ["lesson_id", "timestamp", "status"],
+    },
     "lesson_summary_ready": {
         "description": "Lesson summary or analytics snapshot became available.",
         "review": "auto",

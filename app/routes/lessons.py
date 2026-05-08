@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, redirect, request, url_for
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Lesson, LessonParticipant
+from app.models import Lesson, LessonParticipant, LessonTextbookState
 from app.routes.guards import roles_required
 from app.services.event_service import create_event
 from app.services.lesson_service import finish_lesson, join_lesson
@@ -46,4 +46,17 @@ def finish(lesson_id):
 def status(lesson_id):
     lesson = Lesson.query.get_or_404(lesson_id)
     participant_count = LessonParticipant.query.filter_by(lesson_id=lesson.id).count()
-    return jsonify({"id": lesson.id, "status": lesson.status, "participants": participant_count})
+    state = LessonTextbookState.query.filter_by(lesson_id=lesson.id).first()
+    return jsonify(
+        {
+            "id": lesson.id,
+            "status": lesson.status,
+            "participants": participant_count,
+            "textbook": {
+                "assigned_page_index": state.assigned_page_index if state else None,
+                "assigned_title": state.assigned_title if state else "",
+                "study_mode": state.study_mode if state else "textbook",
+                "updated_at": state.updated_at.isoformat() if state else None,
+            },
+        }
+    )

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Учебник · EduCam{% endblock %}
+{% block title %}Математика 6 класс · EduCam{% endblock %}
 {% block head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/book.css') }}">
 {% endblock %}
@@ -12,6 +12,8 @@
   {%- endif -%}
 {%- endmacro %}
 
+{% set is_locked = current_user.is_authenticated and current_user.role == "student" and study_mode in ["control", "independent"] %}
+
 <section
   class="book-layout"
   data-lesson-id="{{ lesson.id }}"
@@ -19,13 +21,16 @@
   data-activity-url="{{ activity_url }}"
   data-status-url="{{ status_url }}"
   data-homework-url="{{ homework_url }}"
+  data-answer-url="{{ answer_url }}"
+  data-study-mode="{{ study_mode }}"
+  data-user-role="{{ current_user.role if current_user.is_authenticated else 'demo' }}"
 >
   <aside class="book-sidebar">
     <div class="book-brand">
       <div class="book-mark">M6</div>
       <div>
-        <strong>Математика 6</strong>
-        <span>{{ lesson.title }}</span>
+        <strong>Математика 6 класс</strong>
+        <span>Динамический учебник</span>
       </div>
     </div>
     <div class="book-student">{{ student_name|default("Ученик") }}</div>
@@ -54,42 +59,74 @@
       <span style="width: {{ ((page_index + 1) / total * 100)|round(1) }}%"></span>
     </div>
 
-    <div class="book-stage">
-      <button class="page-turn page-turn-prev" type="button" data-turn-href="{% if prev_index is not none %}{{ book_url(prev_index) }}{% endif %}" {% if prev_index is none %}disabled{% endif %} aria-label="Предыдущий разворот">‹</button>
-      <div class="book-spread" data-book-spread>
-        <section class="book-paper book-paper-left">
-          <div class="paper-number">{{ page_index + 1 }}</div>
-          <div class="book-meta">{{ page.chapter }}</div>
-          <h2>{{ page.title }}</h2>
-          <div class="book-content">{{ content|safe }}</div>
-        </section>
-        <section class="book-paper book-paper-right">
-          {% if right_page %}
-            <div class="paper-number">{{ right_page_index + 1 }}</div>
-            <div class="book-meta">{{ right_page.chapter }}</div>
-            <h2>{{ right_page.title }}</h2>
-            <div class="book-content">{{ right_content|safe }}</div>
-          {% else %}
-            <div class="book-end">
-              <strong>Конец раздела</strong>
-              <span>Ты дошла до последней страницы учебника.</span>
-            </div>
-          {% endif %}
-        </section>
+    {% if is_locked %}
+      <section class="book-locked">
+        <strong>
+          {% if study_mode == "control" %}Сейчас идет контрольная работа{% else %}Сейчас идет самостоятельная работа{% endif %}
+        </strong>
+        <p>Учебник временно недоступен. Выполняйте задание учителя, когда работа закончится, материалы снова откроются автоматически.</p>
+      </section>
+    {% else %}
+      <div class="book-stage">
+        <button class="page-turn page-turn-prev" type="button" data-turn-href="{% if prev_index is not none %}{{ book_url(prev_index) }}{% endif %}" {% if prev_index is none %}disabled{% endif %} aria-label="Предыдущий разворот">‹</button>
+        <div class="book-spread" data-book-spread>
+          <section class="book-paper book-paper-left">
+            <div class="paper-number">{{ page_index + 1 }}</div>
+            <div class="book-meta">{{ page.chapter }}</div>
+            <h2>{{ page.title }}</h2>
+            <div class="book-content">{{ content|safe }}</div>
+          </section>
+          <section class="book-paper book-paper-right">
+            {% if right_page %}
+              <div class="paper-number">{{ right_page_index + 1 }}</div>
+              <div class="book-meta">{{ right_page.chapter }}</div>
+              <h2>{{ right_page.title }}</h2>
+              <div class="book-content">{{ right_content|safe }}</div>
+            {% else %}
+              <div class="book-end">
+                <strong>Конец раздела</strong>
+                <span>Ты дошла до последней страницы учебника.</span>
+              </div>
+            {% endif %}
+          </section>
+        </div>
+        <button class="page-turn page-turn-next" type="button" data-turn-href="{% if next_index is not none %}{{ book_url(next_index) }}{% endif %}" {% if next_index is none %}disabled{% endif %} aria-label="Следующий разворот">›</button>
       </div>
-      <button class="page-turn page-turn-next" type="button" data-turn-href="{% if next_index is not none %}{{ book_url(next_index) }}{% endif %}" {% if next_index is none %}disabled{% endif %} aria-label="Следующий разворот">›</button>
-    </div>
 
-    <nav class="book-nav">
-      {% if prev_index is not none %}
-        <a class="button secondary" data-page-link href="{{ book_url(prev_index) }}">Назад</a>
-      {% else %}
-        <span></span>
-      {% endif %}
-      {% if next_index is not none %}
-        <a class="button" data-page-link href="{{ book_url(next_index) }}">Дальше</a>
-      {% endif %}
-    </nav>
+      <nav class="book-nav">
+        {% if prev_index is not none %}
+          <a class="button secondary" data-page-link href="{{ book_url(prev_index) }}">Назад</a>
+        {% else %}
+          <span></span>
+        {% endif %}
+        {% if next_index is not none %}
+          <a class="button" data-page-link href="{{ book_url(next_index) }}">Дальше</a>
+        {% endif %}
+      </nav>
+
+      <section class="practice-panel">
+        <div class="section-row">
+          <div>
+            <h2>Задания для самостоятельного решения</h2>
+            <p>Ответы сохраняются в журнал активности урока.</p>
+          </div>
+        </div>
+        <div class="practice-grid">
+          {% for task in practice_tasks %}
+            <form class="practice-task" data-task-key="{{ task.key }}" data-expected="{{ task.expected }}">
+              <strong>{{ task.title }}</strong>
+              <p>{{ task.prompt }}</p>
+              <textarea name="answer" rows="3" placeholder="Введи ответ"></textarea>
+              <div class="practice-actions">
+                <button class="btn" type="submit">Сохранить ответ</button>
+                <button class="btn ghost askAI" type="button" data-text="{{ task.prompt }}">Подсказка</button>
+              </div>
+              <span class="practice-result" aria-live="polite"></span>
+            </form>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
   </article>
 </section>
 

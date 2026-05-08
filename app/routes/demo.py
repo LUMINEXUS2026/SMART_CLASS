@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash
 
 from app.extensions import db
 from app.models import Lesson, LessonEvent, Student, TextbookActivity, User
-from app.routes.textbook import flatten_pages, load_toc, render_markdown, resolve_page_path
+from app.routes.textbook import build_practice_tasks, flatten_pages, load_toc, render_markdown, resolve_page_path
 from app.services.event_service import create_event
 from app.services.lesson_service import finish_lesson
 
@@ -69,6 +69,9 @@ def student_book(lesson_id, page_index):
         right_page=right_page,
         right_page_index=right_page_index,
         right_content=right_content,
+        practice_tasks=build_practice_tasks(page_index, item),
+        study_mode="textbook",
+        assigned_title="",
         total=len(pages),
         pages=pages,
         content=html,
@@ -78,6 +81,7 @@ def student_book(lesson_id, page_index):
         activity_url=url_for("demo.demo_textbook_activity", lesson_id=lesson.id),
         status_url=url_for("demo.demo_status", lesson_id=lesson.id),
         homework_url="",
+        answer_url="",
     )
 
 
