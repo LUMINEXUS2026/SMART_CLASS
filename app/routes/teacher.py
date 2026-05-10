@@ -14,9 +14,9 @@ from app.models import (
     TextbookActivity,
 )
 from app.routes.guards import roles_required
+from app.services.attendance_service import ATTENDANCE_STATUSES, create_attendance_event
 from app.services.dashboard_data import (
     analytics_series,
-    camera_feeds,
     discipline_events,
     lesson_analysis as lesson_analysis_data,
     recent_lessons,
@@ -70,11 +70,12 @@ def lesson_live(lesson_id):
     return render_template(
         "teacher/lesson_live.html",
         lesson=lesson,
+        lesson_title=readable_lesson_title(lesson),
+        lesson_subject=readable_lesson_subject(lesson),
         participants=participants,
         group_students=group_students,
         events=events,
         activity_by_student=activity_by_student,
-        cameras=[camera for camera in camera_feeds() if camera.room in {"Кабинет 301", "Кабинет 302"}],
         discipline_events=discipline_events(),
     )
 
@@ -127,7 +128,7 @@ def update_attendance(lesson_id):
     lesson = get_teacher_lesson_or_404(lesson_id)
     student_id = int(request.form.get("student_id"))
     status = request.form.get("status")
-    if status not in {"arrived", "late", "absent", "left", "returned", "left_early"}:
+    if status not in ATTENDANCE_STATUSES:
         abort(400)
     participant = LessonParticipant.query.filter_by(lesson_id=lesson.id, student_id=student_id).first()
     if not participant:
@@ -135,6 +136,13 @@ def update_attendance(lesson_id):
         db.session.add(participant)
     participant.attendance_status = status
     participant.manual_note = "Исправлено учителем"
+    attendance_event = create_attendance_event(
+        student_id,
+        lesson.id,
+        status,
+        "teacher",
+        confirmed_by_teacher_id=current_user.id,
+    )
     create_event(
         lesson.id,
         student_id,
@@ -142,7 +150,9 @@ def update_attendance(lesson_id):
         "teacher",
         {
             "status": status,
+            "attendance_event_id": attendance_event.id,
             "participant_id": participant.id,
+            "confirmed_by_teacher_id": current_user.id,
             "manual_review_required": False,
         },
     )
@@ -155,3 +165,20 @@ def get_teacher_lesson_or_404(lesson_id):
     if lesson.teacher_id != current_user.id:
         abort(403)
     return lesson
+
+
+def is_broken_text(value):
+    value = value or ""
+    return "???" in value or value.count("?") >= 3
+
+
+def readable_lesson_title(lesson):
+    if is_broken_text(lesson.title):
+        return "Демонстрационный урок: Математика 6 класс"
+    return lesson.title
+
+
+def readable_lesson_subject(lesson):
+    if is_broken_text(lesson.subject):
+        return "Математика"
+    return lesson.subject
