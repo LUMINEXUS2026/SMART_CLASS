@@ -4,6 +4,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from app.extensions import db
 from app.models import Lesson, LessonParticipant
+from app.services.attendance_service import create_attendance_event
 from app.services.event_service import create_event
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
@@ -23,7 +24,7 @@ def detections():
     confidence = float(data.get("confidence", 0))
     detected = bool(data.get("detected", False))
     manual_review_required = confidence < LOW_CONFIDENCE_THRESHOLD
-    status = "detected" if detected else "absent"
+    status = "present" if detected and not manual_review_required else "uncertain" if detected else "absent"
 
     if user_id:
         participant = LessonParticipant.query.filter_by(lesson_id=lesson.id, student_id=int(user_id)).first()
@@ -31,10 +32,14 @@ def detections():
             participant = LessonParticipant(lesson_id=lesson.id, student_id=int(user_id))
             db.session.add(participant)
         if detected and not manual_review_required:
-            participant.attendance_status = "arrived"
+            participant.attendance_status = "present"
             participant.is_present_by_camera = True
         elif manual_review_required:
+            participant.attendance_status = "uncertain"
             participant.manual_note = "AI confidence is low; teacher review required"
+        else:
+            participant.attendance_status = "absent"
+        create_attendance_event(int(user_id), lesson.id, status, "ai")
 
     event_type = "detected" if detected else "absent"
     event = create_event(
