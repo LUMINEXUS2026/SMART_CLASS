@@ -4,7 +4,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
 from app.models import User
-from app.services.attendance_service import record_student_login_presence, record_student_logout
+from app.services.attendance_service import active_lesson_for_student, record_student_login_presence, record_student_logout
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -24,12 +24,17 @@ def login_post():
     password = request.form.get("password", "")
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password_hash, password):
-        flash("Неверная почта или пароль.")
+        flash("Неверный логин или пароль.")
         return redirect(url_for("auth.login"))
+    if user.role == "student" and not active_lesson_for_student(user):
+        flash("Сейчас нет активного урока для этого ученика.")
+        return redirect(url_for("auth.login"))
+
     login_user(user)
     if user.role == "student":
-        record_student_login_presence(user)
+        participant = record_student_login_presence(user)
         db.session.commit()
+        return redirect(url_for("student.lesson", lesson_id=participant.lesson_id))
     return redirect_after_login()
 
 
