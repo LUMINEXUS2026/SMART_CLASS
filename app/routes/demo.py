@@ -6,6 +6,7 @@ from app.models import Lesson, LessonEvent, Student, TextbookActivity, User
 from app.routes.textbook import flatten_pages, load_toc, render_markdown, resolve_page_path
 from app.services.event_service import create_event
 from app.services.lesson_service import finish_lesson
+from app.routes.teacher import readable_lesson_subject, readable_lesson_title
 
 demo_bp = Blueprint("demo", __name__, url_prefix="/demo")
 
@@ -29,6 +30,8 @@ def teacher_live(lesson_id):
     return render_template(
         "teacher/lesson_live.html",
         lesson=lesson,
+        lesson_title=readable_lesson_title(lesson),
+        lesson_subject=readable_lesson_subject(lesson),
         participants=lesson.participants,
         group_students=group_students,
         events=events,
