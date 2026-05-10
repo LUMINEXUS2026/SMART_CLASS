@@ -1,15 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Видеонаблюдение · EduCam{% endblock %}
-{% block page_title %}Видеонаблюдение{% endblock %}
-{% block page_subtitle %}Камеры учителя и учеников, события дисциплины и активность учебника{% endblock %}
+{% block title %}Урок · EduCam{% endblock %}
+{% block page_title %}Урок{% endblock %}
+{% block page_subtitle %}Тема учебника, режим работы, присутствие и события урока{% endblock %}
 {% block content %}
 {% set live_events_url = events_url|default(url_for('events.list_events', lesson_id=lesson.id)) %}
 {% set live_finish_url = finish_url|default(url_for('lessons.finish', lesson_id=lesson.id)) %}
+{% set status_labels = {
+  "present": "присутствует",
+  "absent": "отсутствует",
+  "late": "опоздал",
+  "manual_confirmed": "подтвержден вручную",
+  "uncertain": "нужно проверить"
+} %}
+{% set event_labels = {
+  "login": "ученик вошел в урок",
+  "logout": "ученик вышел из системы",
+  "student_arrived": "ученик подключился к уроку",
+  "student_late": "ученик опоздал",
+  "student_left_during_lesson": "ученик перешел на другой сайт",
+  "student_returned_during_lesson": "ученик вернулся в учебник",
+  "distraction_detected": "ученик отвлекся",
+  "difficulty_indicator_detected": "ученик поднял руку",
+  "attendance_manual_update": "статус посещаемости изменен",
+  "detected": "присутствие подтверждено",
+  "absent": "ученик не обнаружен",
+  "warning": "требуется внимание учителя",
+  "textbook_action": "действие в учебнике"
+} %}
 
 <section class="lesson-shell" data-lesson-id="{{ lesson.id }}" data-events-url="{{ live_events_url }}">
   <div>
-    <h1>{{ lesson.title }}</h1>
-    <p>{{ lesson.subject }} · статус: {{ lesson.status }} · кабинет 301 · live-потоки готовы к RTSP</p>
+    <h1>{{ lesson_title|default(lesson.title) }}</h1>
+    <p>{{ lesson_subject|default(lesson.subject) }} · статус: {{ lesson.status }} · кабинет 301</p>
   </div>
   <div class="actions">
     <a class="button secondary" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник</a>
@@ -17,62 +39,37 @@
     {% if lesson.status == "active" %}
       <form method="post" action="{{ live_finish_url }}"><button type="submit">Завершить урок</button></form>
     {% else %}
-      <a class="button" href="{{ url_for('reports.lesson_report', lesson_id=lesson.id) }}">Отчёт</a>
+      <a class="button" href="{{ url_for('reports.lesson_report', lesson_id=lesson.id) }}">Отчет</a>
     {% endif %}
   </div>
 </section>
 
-<div class="camera-tabs">
-  <span class="label">Кабинет:</span>
-  <button class="btn">Все камеры</button>
-  <button class="btn ghost">Кабинет 301</button>
-  <button class="btn ghost">Камера учителя</button>
-  <button class="btn ghost">Камера учеников</button>
-</div>
-
-<section class="camera-layout">
-  <div class="camera-grid">
-    {% for camera in cameras|default([]) %}
-      <article class="camera-card {% if camera.featured %}featured-camera{% endif %}">
-        <div class="camera-feed classroom">
-          <span class="scan-line"></span>
-          <span class="rec">● REC</span>
-          <span class="cam-name">{{ camera.name }}</span>
-          <span class="cam-clock" data-clock>--:--:--</span>
-          <span class="attention-chip">{{ camera.attention }}% ATTENTION</span>
-          <span class="det-chip">{{ camera.detections }} det</span>
-        </div>
-        <footer class="camera-footer">
-          <span class="camera-status"><span class="dot green"></span><strong>{{ camera.name }} ({{ camera.kind }})</strong></span>
-          <span><span class="badge">YOLO</span> {{ camera.resolution }}</span>
-        </footer>
-      </article>
-    {% else %}
-      <article class="camera-card"><div class="camera-feed teacher"><span class="scan-line"></span><span class="rec">● REC</span><span class="cam-name">Камера 1 · Учитель</span><span class="cam-clock" data-clock>--:--:--</span><span class="attention-chip">teacher zone 92%</span></div></article>
-      <article class="camera-card"><div class="camera-feed students"><span class="scan-line"></span><span class="rec">● REC</span><span class="cam-name">Камера 2 · Ученики</span><span class="cam-clock" data-clock>--:--:--</span><span class="attention-chip">attention 74%</span></div></article>
-    {% endfor %}
-
+<section class="lesson-live-layout">
+  <div class="lesson-main-column">
     <div class="panel">
-      <h2>Ученики в уроке</h2>
+      <div class="section-row">
+        <h2>Ученики в уроке</h2>
+        <span class="pill">{{ group_students|length }} учеников</span>
+      </div>
       <table class="data-table">
-        <thead><tr><th>Ученик</th><th>Статус</th><th>Учебник</th><th>Исправить</th></tr></thead>
+        <thead><tr><th>Ученик</th><th>Статус</th><th>Активность</th><th>Исправить</th></tr></thead>
         <tbody>
           {% for student in group_students %}
             {% set participant = participants|selectattr("student_id", "equalto", student.user_id)|first %}
+            {% set current_status = participant.attendance_status if participant else "absent" %}
             <tr>
               <td>{{ student.full_name }}</td>
-              <td><span class="pill">{{ participant.attendance_status if participant else "absent" }}</span></td>
+              <td><span class="pill">{{ status_labels.get(current_status, current_status) }}</span></td>
               <td>{{ activity_by_student.get(student.user_id, 0) }}</td>
               <td>
                 <form method="post" action="{{ url_for('teacher.update_attendance', lesson_id=lesson.id) }}" class="mini-form">
                   <input type="hidden" name="student_id" value="{{ student.user_id }}">
                   <select name="status">
-                    <option value="arrived">пришел</option>
-                    <option value="late">опоздал</option>
-                    <option value="absent">отсутствует</option>
-                    <option value="left">вышел</option>
-                    <option value="returned">вернулся</option>
-                    <option value="left_early">ушел раньше</option>
+                    <option value="present" {% if current_status == "present" %}selected{% endif %}>Присутствует</option>
+                    <option value="absent" {% if current_status == "absent" %}selected{% endif %}>Отсутствует</option>
+                    <option value="late" {% if current_status == "late" %}selected{% endif %}>Опоздал</option>
+                    <option value="manual_confirmed" {% if current_status == "manual_confirmed" %}selected{% endif %}>Подтвердить вручную</option>
+                    <option value="uncertain" {% if current_status == "uncertain" %}selected{% endif %}>Нужно проверить</option>
                   </select>
                   <button class="btn ghost" type="submit">OK</button>
                 </form>
@@ -88,27 +85,28 @@
       <div class="mini-metrics">
         <div><strong>74%</strong><small>внимание</small></div>
         <div><strong>88%</strong><small>следование плану</small></div>
-        <div><strong>4</strong><small>телефоны</small></div>
-        <div><strong>62 дБ</strong><small>шум</small></div>
+        <div><strong>{{ group_students|length }}</strong><small>участников</small></div>
+        <div><strong>{{ events|length }}</strong><small>событий урока</small></div>
       </div>
     </div>
   </div>
 
   <aside class="panel">
-    <h2>Текущие события</h2>
+    <h2>Уведомления в кабинете</h2>
     <div class="event-stack" id="eventList">
       {% for event in (discipline_events|default([])) %}
         {% if loop.index <= 4 %}
         <div class="event-card compact">
           <span class="severity {{ event.level }}">{{ event.tag }}</span>
           <strong>{{ event.title }}</strong>
+          <span>{{ event.text }}</span>
           <span>{{ event.room }} · {{ event.time }}</span>
         </div>
         {% endif %}
       {% endfor %}
       {% for event in events %}
         <div class="event-card">
-          <span class="severity {% if 'left' in event.event_type %}warning{% endif %}">{{ event.event_type }}</span>
+          <span class="severity {% if event.event_type in ['student_left_during_lesson', 'distraction_detected', 'warning'] %}warning{% endif %}">{{ event_labels.get(event.event_type, event.event_type) }}</span>
           <strong>{% if event.student %}{{ event.student.name }}{% else %}Система{% endif %}</strong>
           <span>{{ event.created_at.strftime("%H:%M:%S") }} · {{ event.source }} · {{ event.review_status }}</span>
           <form method="post" action="{{ url_for('teacher.review_event', event_id=event.id) }}" class="mini-form">
