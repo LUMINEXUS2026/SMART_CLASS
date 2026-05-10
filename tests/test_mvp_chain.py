@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash
 
 from app import create_app
 from app.extensions import db
-from app.models import Group, Lesson, LessonEvent, LessonParticipant, Student, User
+from app.models import AttendanceEvent, Group, Lesson, LessonEvent, LessonParticipant, Student, User
 
 
 class TestConfig:
@@ -71,11 +71,41 @@ class MvpChainTest(unittest.TestCase):
         student = User.query.filter_by(email="student@example.com").one()
         lesson = Lesson.query.filter_by(title="English").one()
         participant = LessonParticipant.query.filter_by(lesson_id=lesson.id, student_id=student.id).one()
+        attendance_event = AttendanceEvent.query.filter_by(lesson_id=lesson.id, user_id=student.id).one()
         event_types = [event.event_type for event in LessonEvent.query.order_by(LessonEvent.id.asc()).all()]
 
-        self.assertEqual(participant.attendance_status, "arrived")
+        self.assertEqual(participant.attendance_status, "present")
+        self.assertEqual(attendance_event.status, "present")
+        self.assertEqual(attendance_event.source, "login")
         self.assertIn("login", event_types)
         self.assertIn("student_arrived", event_types)
+
+    def test_teacher_can_manually_correct_attendance(self):
+        self.client.post(
+            "/auth/login",
+            data={"email": "teacher@example.com", "password": "password"},
+            follow_redirects=False,
+        )
+        teacher = User.query.filter_by(email="teacher@example.com").one()
+        student = User.query.filter_by(email="student@example.com").one()
+        lesson = Lesson.query.filter_by(title="English").one()
+
+        response = self.client.post(
+            f"/teacher/lesson/{lesson.id}/attendance",
+            data={"student_id": student.id, "status": "manual_confirmed"},
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 302)
+        participant = LessonParticipant.query.filter_by(lesson_id=lesson.id, student_id=student.id).one()
+        attendance_event = AttendanceEvent.query.filter_by(
+            lesson_id=lesson.id,
+            user_id=student.id,
+            source="teacher",
+        ).one()
+        self.assertEqual(participant.attendance_status, "manual_confirmed")
+        self.assertEqual(attendance_event.status, "manual_confirmed")
+        self.assertEqual(attendance_event.confirmed_by_teacher_id, teacher.id)
 
     def test_ai_low_confidence_detection_requires_review(self):
         student = User.query.filter_by(email="student@example.com").one()
