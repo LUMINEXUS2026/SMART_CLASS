@@ -1,3 +1,4 @@
+from .attendance_event import AttendanceEvent
 from .user import User
 from .group import Group
 from .lesson import Lesson
@@ -13,6 +14,7 @@ from .textbook_activity import TextbookActivity
 
 __all__ = [
     "Group",
+    "AttendanceEvent",
     "Lesson",
     "LessonEvent",
     "LessonParticipant",
