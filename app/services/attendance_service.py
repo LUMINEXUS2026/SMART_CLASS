@@ -3,8 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 
 from app.extensions import db
-from app.models import Lesson, LessonParticipant, Student
+from app.models import AttendanceEvent, Lesson, LessonParticipant, Student
 from app.services.event_service import create_event
+
+ATTENDANCE_STATUSES = {"present", "absent", "late", "manual_confirmed", "uncertain"}
 
 
 def active_lesson_for_student(user):
@@ -22,10 +24,26 @@ def attendance_status_for(lesson, now=None):
     now = now or datetime.now()
     starts_at = lesson.starts_at
     if not starts_at:
-        return "arrived"
-    late_after_minutes = lesson.late_after_minutes or 10
+        return "present"
+    late_after_minutes = lesson.late_after_minutes or 5
     minutes_after_start = (now - starts_at).total_seconds() / 60
-    return "late" if minutes_after_start > late_after_minutes else "arrived"
+    return "late" if minutes_after_start > late_after_minutes else "present"
+
+
+def create_attendance_event(user_id, lesson_id, status, source, confirmed_by_teacher_id=None, timestamp=None):
+    if status not in ATTENDANCE_STATUSES:
+        raise ValueError(f"Unknown attendance status: {status}")
+    event = AttendanceEvent(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        timestamp=timestamp or datetime.now(),
+        status=status,
+        source=source,
+        confirmed_by_teacher_id=confirmed_by_teacher_id,
+    )
+    db.session.add(event)
+    db.session.flush()
+    return event
 
 
 def record_student_login_presence(user):
@@ -58,11 +76,12 @@ def record_student_login_presence(user):
             "auto_attendance": True,
         },
     )
+    create_attendance_event(user.id, lesson.id, status, "login")
     if was_new:
         create_event(
             lesson.id,
             user.id,
-            "student_arrived" if status == "arrived" else "student_late",
+            "student_arrived" if status == "present" else "student_late",
             "auth",
             {
                 "status": status,
@@ -70,6 +89,38 @@ def record_student_login_presence(user):
                 "reason": "student_login",
             },
         )
+    return participant
+
+
+def record_teacher_attendance_update(lesson, student_id, status, teacher_id):
+    if status not in ATTENDANCE_STATUSES:
+        raise ValueError(f"Unknown attendance status: {status}")
+    participant = LessonParticipant.query.filter_by(lesson_id=lesson.id, student_id=student_id).first()
+    if not participant:
+        participant = LessonParticipant(lesson_id=lesson.id, student_id=student_id)
+        db.session.add(participant)
+    participant.attendance_status = status
+    participant.manual_note = "Changed by teacher"
+    attendance_event = create_attendance_event(
+        student_id,
+        lesson.id,
+        status,
+        "teacher",
+        confirmed_by_teacher_id=teacher_id,
+    )
+    create_event(
+        lesson.id,
+        student_id,
+        "attendance_manual_update",
+        "teacher",
+        {
+            "status": status,
+            "attendance_event_id": attendance_event.id,
+            "participant_id": participant.id,
+            "confirmed_by_teacher_id": teacher_id,
+            "manual_review_required": False,
+        },
+    )
     return participant
 
 

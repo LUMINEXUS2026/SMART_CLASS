@@ -8,7 +8,7 @@ class Lesson(db.Model):
     status = db.Column(db.String(20), default="active", nullable=False, index=True)
     starts_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
     ends_at = db.Column(db.DateTime)
-    late_after_minutes = db.Column(db.Integer, default=10, nullable=False)
+    late_after_minutes = db.Column(db.Integer, default=5, nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey("group.id"), index=True)
     teacher_comment = db.Column(db.Text, default="", nullable=False)
