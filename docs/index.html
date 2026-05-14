@@ -193,7 +193,7 @@ p {
   position: relative;
   min-height: 100svh;
   overflow: hidden;
-  padding: 170px 0 78px;
+  padding: 118px 0 78px;
 }
 
 .hero-bg,
@@ -220,14 +220,14 @@ p {
   position: relative;
   z-index: 1;
   display: grid;
-  min-height: calc(100svh - 248px);
+  min-height: calc(100svh - 196px);
   grid-template-columns: minmax(0, 780px) minmax(290px, 360px);
-  align-items: end;
+  align-items: center;
   gap: 42px;
 }
 
 .hero-copy {
-  padding-bottom: 12px;
+  padding-top: 44px;
 }
 
 .eyebrow {
@@ -683,11 +683,15 @@ p {
 
   .hero {
     min-height: auto;
-    padding: 124px 0 62px;
+    padding: 104px 0 62px;
   }
 
   .hero-inner {
     min-height: 0;
+  }
+
+  .hero-copy {
+    padding-top: 0;
   }
 
   .hero-actions,
