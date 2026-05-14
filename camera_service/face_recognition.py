@@ -34,9 +34,11 @@ class FaceRecognitionAdapter:
     def __init__(self, faces_dir: str | Path, threshold: float = 78.0):
         self.faces_dir = Path(faces_dir)
         self.threshold = threshold
-        self.face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-        )
+        self.face_cascade = None
+        if hasattr(cv2, "CascadeClassifier") and hasattr(cv2, "data"):
+            self.face_cascade = cv2.CascadeClassifier(
+                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+            )
         self.recognizer = None
         self.labels: dict[int, str] = {}
         self._train()
@@ -46,7 +48,7 @@ class FaceRecognitionAdapter:
         return self.recognizer is not None and bool(self.labels)
 
     def _train(self) -> None:
-        if not self.faces_dir.exists():
+        if not self.face_cascade or not self.faces_dir.exists():
             return
         if not hasattr(cv2, "face"):
             raise RuntimeError(
@@ -85,6 +87,8 @@ class FaceRecognitionAdapter:
         self.recognizer.train(images, np.array(labels, dtype=np.int32))
 
     def recognize(self, frame) -> list[FaceMatch]:
+        if not self.face_cascade:
+            return []
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
         matches: list[FaceMatch] = []

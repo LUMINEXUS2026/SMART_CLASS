@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Видеонаблюдение · EduCam{% endblock %}
-{% block page_title %}Видеонаблюдение{% endblock %}
+{% block title %}Урок · EduCam{% endblock %}
+{% block page_title %}Урок{% endblock %}
 {% block page_subtitle %}Включение камер, состояние кабинетов и события в реальном времени{% endblock %}
 {% block content %}
 <div class="camera-tabs">
@@ -17,9 +17,9 @@
   <div class="camera-grid">
     {% for camera in cameras %}
       <article class="camera-card {% if camera.featured %}featured-camera{% endif %}">
-        <a class="camera-open-link" href="{% if camera.room == 'Кабинет 5' %}{{ url_for('admin.classroom_5_camera') }}{% else %}{{ url_for('admin.classroom_5_camera') }}{% endif %}" aria-label="Открыть {{ camera.name }}">
-        <div class="camera-feed {% if camera.enabled %}classroom{% else %}offline{% endif %} {% if camera.room == 'Кабинет 5' %}camera-feed-live{% endif %}">
-          {% if camera.room == 'Кабинет 5' %}
+        <a class="camera-open-link" href="{% if camera.display_mode == 'demo_video' %}{{ url_for('admin.classroom_5_demo_camera') }}{% else %}{{ url_for('admin.classroom_5_camera') }}{% endif %}" aria-label="Открыть {{ camera.name }}">
+        <div class="camera-feed {% if camera.enabled %}classroom{% else %}offline{% endif %} {% if camera.display_mode in ['demo_video', 'ip_camera'] %}camera-feed-live{% endif %}">
+          {% if camera.display_mode == 'demo_video' %}
             <video
               class="camera-snapshot-video"
               src="{{ url_for('static', filename='videos/english_class_demo.mp4') }}"
@@ -30,11 +30,19 @@
               data-state-url="{{ url_for('admin.classroom_5_camera_state') }}"
               data-lag-seconds="30"
             ></video>
+          {% elif camera.display_mode == 'ip_camera' %}
+            <img
+              class="camera-snapshot-video"
+              src="{{ url_for('admin.classroom_5_camera_snapshot') }}"
+              alt="{{ camera.name }}"
+              onerror="this.style.display='none'"
+            >
+            <span class="no-signal live-placeholder">ОЖИДАНИЕ RTSP</span>
           {% endif %}
           <span class="scan-line"></span>
-          <span class="rec">● REC</span>
+          {% if camera.enabled %}<span class="rec">● REC</span>{% endif %}
           <span class="cam-name">{{ camera.name }}</span>
-          <span class="cam-clock" data-clock>--:--:--</span>
+          {% if camera.enabled %}<span class="cam-clock" data-clock>--:--:--</span>{% endif %}
           {% if camera.enabled %}
             <span class="attention-chip">{{ camera.attention }}% ATTENTION</span>
             <span class="det-chip">{{ camera.detections }} det</span>
@@ -45,7 +53,11 @@
         </a>
         <footer class="camera-footer">
           <span class="camera-status"><span class="dot {% if camera.enabled %}green{% else %}muted-dot{% endif %}"></span><strong>{{ camera.name }} ({{ camera.kind }})</strong></span>
-          <span><span class="badge">YOLO</span> {{ camera.resolution }}</span>
+          {% if camera.enabled %}
+            <span><span class="badge">YOLO</span> {{ camera.resolution }}</span>
+          {% else %}
+            <span>{{ camera.status }}</span>
+          {% endif %}
         </footer>
       </article>
     {% endfor %}

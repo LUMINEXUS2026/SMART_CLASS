@@ -20,7 +20,7 @@
       {% for lesson in lessons %}
         <a class="lesson-row" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id) }}">
           <span class="score-ring">{{ analysis.score }}</span>
-          <span><strong>{{ lesson.subject }}</strong><small>{{ lesson.title }} | {{ lesson.starts_at.strftime("%H:%M") }} | {{ lesson.status }}</small></span>
+          <span><strong>{{ lesson.subject }}</strong><small>{{ "Квадратные уравнения. Формула дискриминанта" if "?" in lesson.title else lesson.title }} | {{ lesson.starts_at.strftime("%H:%M") }} | {{ lesson.status }}</small></span>
           <span class="pill">Открыть</span>
         </a>
       {% else %}

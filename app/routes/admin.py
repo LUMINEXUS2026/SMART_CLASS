@@ -2,7 +2,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from flask import Blueprint, current_app, jsonify, render_template
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, url_for
 
 from app.models import (
     Classroom,
@@ -28,6 +28,36 @@ from app.services.dashboard_data import (
 )
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+DEFAULT_CLASSROOM_5_RTSP = "rtsp://admin:password@192.168.0.106:554/h264_stream"
+
+
+def classroom_5_config_path() -> Path:
+    return Path(current_app.instance_path) / "camera_config" / "classroom_5.json"
+
+
+def classroom_5_snapshot_path() -> Path:
+    return Path(current_app.instance_path) / "camera_state" / "classroom_5.jpg"
+
+
+def load_classroom_5_config() -> dict:
+    config = {
+        "source_type": "ip_camera",
+        "source": DEFAULT_CLASSROOM_5_RTSP,
+    }
+    path = classroom_5_config_path()
+    if path.exists():
+        try:
+            config.update(json.loads(path.read_text(encoding="utf-8")))
+        except json.JSONDecodeError:
+            pass
+    return config
+
+
+def save_classroom_5_config(config: dict) -> None:
+    path = classroom_5_config_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 @admin_bp.get("/dashboard")
@@ -150,13 +180,47 @@ def cameras():
     return render_template("admin/cameras.html", cameras=camera_feeds(), discipline_events=discipline_events())
 
 
+@admin_bp.post("/cameras/classroom-5/source")
+@roles_required("admin")
+def update_classroom_5_camera_source():
+    source_type = request.form.get("source_type", "ip_camera")
+    if source_type not in {"ip_camera", "demo_video"}:
+        source_type = "ip_camera"
+
+    source = request.form.get("source", "").strip()
+    if not source:
+        source = DEFAULT_CLASSROOM_5_RTSP if source_type == "ip_camera" else "app/static/videos/english_class_demo.mp4"
+
+    save_classroom_5_config({"source_type": source_type, "source": source})
+    flash("Источник камеры обновлен.", "success")
+    return redirect(url_for("admin.classroom_5_camera"))
+
+
 @admin_bp.get("/cameras/classroom-5")
 @roles_required("admin")
 def classroom_5_camera():
-    camera = next(camera for camera in camera_feeds() if camera.room == "Кабинет 5")
+    camera = next(camera for camera in camera_feeds() if camera.display_mode == "ip_camera")
+    return render_camera_detail(camera, load_classroom_5_config())
+
+
+@admin_bp.get("/cameras/classroom-5/demo")
+@roles_required("admin")
+def classroom_5_demo_camera():
+    camera = next(camera for camera in camera_feeds() if camera.display_mode == "demo_video")
+    return render_camera_detail(
+        camera,
+        {
+            "source_type": "demo_video",
+            "source": "app/static/videos/english_class_demo.mp4",
+        },
+    )
+
+
+def render_camera_detail(camera, camera_config):
     return render_template(
         "admin/camera_detail.html",
         camera=camera,
+        camera_config=camera_config,
         discipline_events=discipline_events(),
         analysis=lesson_analysis_data(),
     )
@@ -188,3 +252,12 @@ def classroom_5_camera_state():
             "events": [],
         }
     )
+
+
+@admin_bp.get("/cameras/classroom-5/snapshot")
+@roles_required("admin")
+def classroom_5_camera_snapshot():
+    snapshot_path = classroom_5_snapshot_path()
+    if snapshot_path.exists():
+        return send_file(snapshot_path, mimetype="image/jpeg", max_age=0)
+    return "", 404

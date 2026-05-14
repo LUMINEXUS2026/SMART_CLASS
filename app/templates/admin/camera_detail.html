@@ -17,7 +17,25 @@
 <section class="expanded-camera-layout">
   <article class="panel expanded-camera-panel">
     <div class="video-stage" data-state-url="{{ url_for('admin.classroom_5_camera_state') }}">
-      <video class="lesson-video" src="{{ url_for('static', filename='videos/english_class_demo.mp4') }}" controls muted playsinline preload="metadata" data-stepped-ai-video data-step-frames="4"></video>
+      {% if camera_config.source_type == "ip_camera" %}
+        <img class="lesson-video" src="{{ url_for('admin.classroom_5_camera_snapshot') }}" alt="IP camera snapshot" data-live-snapshot onerror="this.style.opacity='0'">
+        <span class="no-signal live-placeholder detail-placeholder">ОЖИДАНИЕ RTSP-ПОТОКА</span>
+      {% else %}
+        <video
+          class="lesson-video"
+          src="{{ url_for('static', filename='videos/english_class_demo.mp4') }}"
+          controls
+          muted
+          autoplay
+          loop
+          playsinline
+          preload="auto"
+          data-smooth-sync-video
+          data-sync-lag="0.35"
+          onloadedmetadata="this.muted=true; this.play().catch(function(){})"
+          oncanplay="this.muted=true; this.play().catch(function(){})"
+        ></video>
+      {% endif %}
       <span class="rec">● REC</span>
       <span class="cam-name">{{ camera.name }} · {{ camera.room }}</span>
       <span class="cam-clock" data-clock>--:--:--</span>
@@ -46,18 +64,39 @@
 
 <section class="grid">
   <div class="panel">
+    <h2>Источник реальной камеры</h2>
+    <form method="post" action="{{ url_for('admin.update_classroom_5_camera_source') }}" class="stack-form">
+      <label>
+        Режим
+        <select name="source_type">
+          <option value="ip_camera" {% if camera_config.source_type == "ip_camera" %}selected{% endif %}>IP камера RTSP</option>
+          <option value="demo_video" {% if camera_config.source_type == "demo_video" %}selected{% endif %}>Демо-видеозапись</option>
+        </select>
+      </label>
+      <label>
+        Адрес источника
+        <input name="source" value="{{ camera_config.source }}" placeholder="rtsp://admin:password@192.168.0.106:554/h264_stream">
+      </label>
+      <button class="button" type="submit">Сохранить источник</button>
+    </form>
+  </div>
+  <div class="panel">
     <h2>Команда для реального распознавания этого видео</h2>
     <pre class="code-block">python camera_service/camera_worker.py `
   --backend http://127.0.0.1:5000 `
   --lesson-id 1 `
   --token dev-camera-token `
-  --source "app/static/videos/english_class_demo.mp4" `
+  --source-config instance/camera_config/classroom_5.json `
   --camera-name "Кабинет 5-А" `
   --room "Кабинет 5" `
   --lesson-title "Английский язык" `
   --teacher-name "Киреева Ирина" `
   --faces-dir faces_db `
   --state-file instance/camera_state/classroom_5.json `
+  --snapshot-file instance/camera_state/classroom_5.jpg `
+  --confidence 0.20 `
+  --imgsz 960 `
+  --disable-phone-candidates `
   --display</pre>
   </div>
   <div class="panel">
@@ -76,5 +115,5 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='js/camera_detail.js') }}?v=12"></script>
+  <script src="{{ url_for('static', filename='js/camera_detail.js') }}?v=17"></script>
 {% endblock %}

@@ -141,16 +141,23 @@ def parse_args():
     parser.add_argument("--lesson-id", type=int, required=True)
     parser.add_argument("--token", required=True)
     parser.add_argument("--source", default="0", help="Webcam index, video file, RTSP URL, or HTTP stream")
+    parser.add_argument("--source-config", default="", help="JSON file with source_type and source fields")
     parser.add_argument("--camera-name", default="camera-1")
     parser.add_argument("--room", default="")
     parser.add_argument("--lesson-title", default="")
     parser.add_argument("--teacher-name", default="")
     parser.add_argument("--student-count", type=int, default=0)
     parser.add_argument("--disable-phone-candidates", action="store_true")
+    parser.add_argument(
+        "--enable-phone-candidates",
+        action="store_true",
+        help="Allow heuristic OpenCV phone candidates when YOLO does not find phones.",
+    )
     parser.add_argument("--model", default="yolov8n.pt", help="YOLO model path, for example yolov8n.pt")
     parser.add_argument("--imgsz", type=int, default=960, help="YOLO inference size. Lower is faster.")
     parser.add_argument("--faces-dir", default="", help="Folder with known faces: faces_db/<student name>/*.jpg")
     parser.add_argument("--state-file", default="", help="JSON file consumed by the EduCam camera page")
+    parser.add_argument("--snapshot-file", default="", help="JPEG frame consumed by the EduCam camera page")
     parser.add_argument("--face-threshold", type=float, default=78.0)
     parser.add_argument("--confidence", type=float, default=0.35)
     parser.add_argument("--every-n-frames", type=int, default=5)
@@ -167,6 +174,19 @@ def open_source(source: str):
     return cv2.VideoCapture(source)
 
 
+def read_source_config(config_path: str, fallback_source: str) -> str:
+    if not config_path:
+        return fallback_source
+    path = Path(config_path)
+    if not path.exists():
+        return fallback_source
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return fallback_source
+    return data.get("source") or fallback_source
+
+
 def main():
     args = parse_args()
     detector = YoloObjectDetector(args.model, confidence=args.confidence, imgsz=args.imgsz)
@@ -177,19 +197,37 @@ def main():
     sender = EventSender(args.backend, args.token)
     debouncer = EventDebouncer(args.cooldown_sec)
     behavior_tracker = ClassroomBehaviorTracker(args.student_count or 4)
-    capture = open_source(args.source)
+    current_source = read_source_config(args.source_config, args.source)
+    capture = open_source(current_source)
+    next_config_check = time.monotonic() + 2
+    config_mtime = Path(args.source_config).stat().st_mtime if args.source_config and Path(args.source_config).exists() else 0
 
     if not capture.isOpened():
-        raise RuntimeError(f"Cannot open camera source: {args.source}")
+        raise RuntimeError(f"Cannot open camera source: {current_source}")
 
     frame_index = 0
     fps = capture.get(cv2.CAP_PROP_FPS) or 25
-    print(f"EduCam worker started: source={args.source}, lesson_id={args.lesson_id}, camera={args.camera_name}")
+    print(f"EduCam worker started: source={current_source}, lesson_id={args.lesson_id}, camera={args.camera_name}")
 
     while True:
+        if args.source_config and time.monotonic() >= next_config_check:
+            next_config_check = time.monotonic() + 2
+            path = Path(args.source_config)
+            mtime = path.stat().st_mtime if path.exists() else 0
+            if mtime != config_mtime:
+                next_source = read_source_config(args.source_config, current_source)
+                config_mtime = mtime
+                if next_source != current_source:
+                    print(f"switching camera source: {next_source}")
+                    capture.release()
+                    current_source = next_source
+                    capture = open_source(current_source)
+                    frame_index = 0
+                    fps = capture.get(cv2.CAP_PROP_FPS) or 25
+
         ok, frame = capture.read()
         if not ok:
-            if not args.source.isdigit() and Path(args.source).exists():
+            if not current_source.isdigit() and Path(current_source).exists():
                 capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
             time.sleep(0.5)
@@ -214,7 +252,7 @@ def main():
         if args.disable_phone_candidates:
             detections = [item for item in detections if item.label != "cell phone"]
             phones = []
-        if not phones and not args.disable_phone_candidates:
+        if not phones and args.enable_phone_candidates and not args.disable_phone_candidates:
             candidates = detect_phone_candidates(frame, people)
             detections.extend(candidates)
             phones = candidates
@@ -231,6 +269,8 @@ def main():
                 video_time_sec,
                 behavior_tracker,
             )
+        if args.snapshot_file:
+            write_snapshot(Path(args.snapshot_file), frame)
 
         for name in known_names:
             maybe_send(
@@ -301,8 +341,31 @@ def maybe_send(args, sender, debouncer, event_type, student_name, key, payload):
         print(json.dumps(event, ensure_ascii=False))
         return
 
-    result = sender.send(**event)
-    print(f"sent {event_type}: {result}")
+    try:
+        result = sender.send(**event)
+        print(f"sent {event_type}: {result}")
+    except Exception as exc:
+        print(f"event send skipped ({event_type}): {exc}")
+
+
+def write_snapshot(snapshot_path: Path, frame) -> None:
+    snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = snapshot_path.with_name(f"{snapshot_path.stem}.{os.getpid()}.jpg")
+    cv2.imwrite(str(temp_path), frame, [int(cv2.IMWRITE_JPEG_QUALITY), 82])
+    for attempt in range(8):
+        try:
+            temp_path.replace(snapshot_path)
+            break
+        except PermissionError:
+            if attempt == 7:
+                print(f"snapshot write skipped: {snapshot_path} is locked")
+                break
+            time.sleep(0.04)
+    if temp_path.exists():
+        try:
+            temp_path.unlink()
+        except PermissionError:
+            pass
 
 
 def estimate_attention(people_count: int, faces_count: int, phones_count: int) -> int:
@@ -475,7 +538,7 @@ def write_state(
             role = "teacher"
             display_name = args.teacher_name or "Учитель"
         elif detection.label == "person":
-            display_name = f"Ученик {student_index:02d}"
+            display_name = f"Не распознанный человек {student_index:02d}"
             student_index += 1
 
         item = {
@@ -513,6 +576,16 @@ def write_state(
 
     visible_people = [item for item in items if item["label"] == "person"]
     visible_phones = [item for item in items if item["label"] == "cell phone"]
+    if visible_phones:
+        behavior_events = [
+            {
+                "type": "phone_detected",
+                "level": "warning",
+                "title": "Телефон в кадре",
+                "text": "AI обнаружил телефон на реальной камере или демо-видео.",
+            },
+            *behavior_events,
+        ]
     visible_students = [item for item in items if item.get("role") == "student"]
     visible_attention = [item.get("attention") for item in visible_students if item.get("attention") is not None]
     if visible_attention:
@@ -559,7 +632,10 @@ def suppress_overlapping_people(people: list[Detection]) -> list[Detection]:
     people = sorted(people, key=lambda item: item.confidence, reverse=True)
     kept: list[Detection] = []
     for detection in people:
-        if all(overlap_ratio(detection.box, item.box) < 0.45 for item in kept):
+        if all(
+            max(overlap_ratio(detection.box, item.box), overlap_ratio(item.box, detection.box)) < 0.45
+            for item in kept
+        ):
             kept.append(detection)
     return kept
 
@@ -666,15 +742,21 @@ def teacher_detail(role: str) -> str:
 def choose_student_boxes(people: list[Detection], teacher_box, limit: int = 4) -> set[tuple[int, int, int, int]]:
     candidates = []
     for detection in suppress_overlapping_people(people):
-        if detection.box == teacher_box:
+        if teacher_box and (
+            detection.box == teacher_box
+            or overlap_ratio(detection.box, teacher_box) > 0.18
+            or overlap_ratio(teacher_box, detection.box) > 0.18
+        ):
             continue
         x1, y1, x2, y2 = detection.box
         area = max(1, (x2 - x1) * (y2 - y1))
         # Students in this demo are seated at desks, so favor lower-center
         # and desk-side detections after the moving teacher is removed.
         center_y = (y1 + y2) / 2
+        center_x = (x1 + x2) / 2
         seated_bonus = 1.15 if center_y > 430 else 0.85
-        candidates.append((detection.confidence * area * seated_bonus, detection.box))
+        desk_side_bonus = 1.12 if center_x < 760 or center_x > 1020 else 1.0
+        candidates.append((detection.confidence * area * seated_bonus * desk_side_bonus, detection.box))
     candidates.sort(reverse=True)
     return {box for _, box in candidates[:limit]}
 
