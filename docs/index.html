@@ -221,7 +221,7 @@ p {
   z-index: 1;
   display: grid;
   min-height: calc(100svh - 196px);
-  grid-template-columns: minmax(0, 780px) minmax(290px, 360px);
+  grid-template-columns: minmax(0, 980px);
   align-items: center;
   gap: 42px;
 }
@@ -281,6 +281,12 @@ p {
 }
 
 .hero-card {
+  display: grid;
+  max-width: 780px;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(260px, 1fr);
+  align-items: center;
+  gap: 14px 26px;
+  margin-top: 28px;
   padding: 24px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
@@ -292,7 +298,7 @@ p {
 .hero-card span,
 .project-label {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   color: var(--cyan);
   font-size: 0.78rem;
   font-weight: 900;
@@ -301,9 +307,14 @@ p {
 
 .hero-card strong {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   font-size: 1.55rem;
   line-height: 1.16;
+}
+
+.hero-card p {
+  grid-column: 2;
+  margin-bottom: 0;
 }
 
 .section {
@@ -656,7 +667,12 @@ p {
   }
 
   .hero-card {
-    max-width: 520px;
+    max-width: 640px;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-card p {
+    grid-column: auto;
   }
 
   .project-grid {
@@ -683,7 +699,7 @@ p {
 
   .hero {
     min-height: auto;
-    padding: 104px 0 62px;
+    padding: 96px 0 58px;
   }
 
   .hero-inner {
@@ -692,6 +708,30 @@ p {
 
   .hero-copy {
     padding-top: 0;
+  }
+
+  .hero-bg img {
+    object-position: 58% center;
+  }
+
+  .hero-bg::after {
+    background:
+      linear-gradient(180deg, rgba(5, 5, 20, 0.9) 0%, rgba(5, 5, 20, 0.8) 38%, #050514 100%),
+      linear-gradient(90deg, rgba(5, 5, 20, 0.92), rgba(5, 5, 20, 0.72));
+  }
+
+  h1 {
+    font-size: clamp(3.25rem, 18vw, 5.4rem);
+    line-height: 0.92;
+    word-break: break-word;
+  }
+
+  h2 {
+    font-size: clamp(2rem, 10vw, 2.7rem);
+  }
+
+  .hero-lead {
+    font-size: 1.02rem;
   }
 
   .hero-actions,
@@ -704,8 +744,24 @@ p {
     width: 100%;
   }
 
+  .hero-card {
+    margin-top: 22px;
+    padding: 18px;
+  }
+
+  .hero-card strong {
+    font-size: 1.24rem;
+  }
+
   .section {
     padding: 76px 0;
+  }
+
+  .company-grid,
+  .smart-grid,
+  .demo-grid,
+  .contact-box {
+    gap: 28px;
   }
 
   .logo-showcase {
@@ -717,8 +773,20 @@ p {
     padding: 22px;
   }
 
+  .project-grid {
+    gap: 14px;
+  }
+
+  .project-content h3 {
+    font-size: 1.55rem;
+  }
+
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .preview-body {
+    padding: 12px;
   }
 
   .demo-row {
@@ -728,6 +796,43 @@ p {
 
   .demo-row strong {
     text-align: left;
+  }
+
+  .footer img {
+    width: 104px;
+  }
+}
+
+@media (max-width: 420px) {
+  .container {
+    width: min(100% - 22px, 1180px);
+  }
+
+  .site-header {
+    width: calc(100% - 14px);
+  }
+
+  .brand {
+    width: 96px;
+    height: 44px;
+  }
+
+  h1 {
+    font-size: clamp(2.72rem, 17vw, 4.3rem);
+  }
+
+  .hero-lead {
+    line-height: 1.62;
+  }
+
+  .hero-card,
+  .project-content,
+  .contact-box {
+    padding: 18px;
+  }
+
+  .section-head {
+    margin-bottom: 30px;
   }
 }
 
@@ -768,12 +873,12 @@ p {
               <a class="button primary" href="#projects">Смотреть проекты</a>
               <a class="button secondary" href="#demo">Открыть демо</a>
             </div>
+            <aside class="hero-card" aria-label="Ключевые направления">
+              <span>Портфель проектов</span>
+              <strong>Кроко / Смарт Класс / Камера</strong>
+              <p>От подготовки к ОГЭ до автоматической аналитики занятий и посещаемости.</p>
+            </aside>
           </div>
-          <aside class="hero-card" aria-label="Ключевые направления">
-            <span>Портфель проектов</span>
-            <strong>Кроко / Смарт Класс / Камера</strong>
-            <p>От подготовки к ОГЭ до автоматической аналитики занятий и посещаемости.</p>
-          </aside>
         </div>
       </section>
 
