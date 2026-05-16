@@ -8,6 +8,8 @@
 
 <div class="list">
   {% for lesson in active_lessons %}
+    {% set textbook_state = textbook_states.get(lesson.id) %}
+    {% set assigned_page = textbook_state.assigned_page_index if textbook_state else 0 %}
     <article class="item">
       <div>
         <h2>{{ lesson.title }}</h2>
@@ -16,7 +18,7 @@
       <div class="actions">
         {% if lesson.id in joined_ids %}
           <a class="button" href="{{ url_for('student.lesson', lesson_id=lesson.id) }}">Вернуться</a>
-          <a class="button secondary" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Учебник 6 класса</a>
+          <a class="button secondary" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=assigned_page) }}">Учебник 6 класса</a>
         {% else %}
           <form method="post" action="{{ url_for('lessons.join', lesson_id=lesson.id) }}">
             <button type="submit">Войти в урок</button>

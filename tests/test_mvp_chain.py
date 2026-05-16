@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash
 
 from app import create_app
 from app.extensions import db
-from app.models import Group, Lesson, LessonEvent, LessonParticipant, Student, User
+from app.models import Group, Lesson, LessonEvent, LessonParticipant, Student, TeacherGroupLink, User
 
 
 class TestConfig:
@@ -58,6 +58,7 @@ class MvpChainTest(unittest.TestCase):
             starts_at=datetime.now(),
         )
         db.session.add(lesson)
+        db.session.add(TeacherGroupLink(teacher_id=teacher.id, group_id=group.id))
         db.session.commit()
 
     def test_student_login_creates_attendance_event(self):
@@ -119,6 +120,57 @@ class MvpChainTest(unittest.TestCase):
         self.assertEqual(LessonEvent.query.filter_by(event_type="textbook_action").count(), 1)
         inactive = LessonEvent.query.filter_by(event_type="inactive").one()
         self.assertEqual(inactive.review_status, "pending")
+
+    def test_student_sidebar_does_not_expose_demo_teacher_flow(self):
+        self.client.post(
+            "/auth/login",
+            data={"email": "student@example.com", "password": "password"},
+            follow_redirects=False,
+        )
+
+        response = self.client.get("/student/dashboard")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        self.assertNotIn("/demo/teacher", body)
+        self.assertNotIn("/demo", body)
+
+    def test_student_cannot_open_or_finish_demo_teacher_lesson(self):
+        self.client.post(
+            "/auth/login",
+            data={"email": "student@example.com", "password": "password"},
+            follow_redirects=False,
+        )
+        lesson = Lesson.query.filter_by(title="English").one()
+
+        teacher_response = self.client.get(f"/demo/teacher/{lesson.id}")
+        finish_response = self.client.post(f"/demo/teacher/{lesson.id}/finish")
+
+        self.assertEqual(teacher_response.status_code, 403)
+        self.assertEqual(finish_response.status_code, 403)
+        self.assertEqual(Lesson.query.get(lesson.id).status, "active")
+
+    def test_teacher_lesson_shortcut_uses_owned_lesson(self):
+        db.session.add(
+            User(
+                email="other-teacher@example.com",
+                name="Other Teacher",
+                role="teacher",
+                password_hash=generate_password_hash("password"),
+            )
+        )
+        db.session.commit()
+        self.client.post(
+            "/auth/login",
+            data={"email": "teacher@example.com", "password": "password"},
+            follow_redirects=False,
+        )
+        lesson = Lesson.query.filter_by(title="English").one()
+
+        response = self.client.get("/teacher/lesson", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(f"/teacher/lesson/{lesson.id}", response.headers["Location"])
 
 
 if __name__ == "__main__":

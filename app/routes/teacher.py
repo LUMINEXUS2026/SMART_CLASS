@@ -53,6 +53,25 @@ def dashboard():
     )
 
 
+@teacher_bp.get("/lesson")
+@roles_required("teacher")
+def current_lesson():
+    lesson = (
+        Lesson.query.filter_by(teacher_id=current_user.id, status="active")
+        .order_by(Lesson.starts_at.desc())
+        .first()
+    )
+    if not lesson:
+        lesson = (
+            Lesson.query.filter_by(teacher_id=current_user.id)
+            .order_by(Lesson.starts_at.desc())
+            .first()
+        )
+    if not lesson:
+        return redirect(url_for("teacher.dashboard"))
+    return redirect(url_for("teacher.lesson_live", lesson_id=lesson.id))
+
+
 @teacher_bp.get("/lesson/<int:lesson_id>")
 @roles_required("teacher")
 def lesson_live(lesson_id):

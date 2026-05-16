@@ -1,4 +1,5 @@
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, url_for
+from flask_login import current_user
 from werkzeug.security import generate_password_hash
 
 from app.extensions import db
@@ -18,6 +19,8 @@ def home():
 
 @demo_bp.get("/teacher/<int:lesson_id>")
 def teacher_live(lesson_id):
+    if current_user.is_authenticated and current_user.role not in {"teacher", "admin"}:
+        abort(403)
     lesson = Lesson.query.get_or_404(lesson_id)
     events = (
         LessonEvent.query.filter_by(lesson_id=lesson.id)
@@ -40,6 +43,8 @@ def teacher_live(lesson_id):
 
 @demo_bp.post("/teacher/<int:lesson_id>/finish")
 def finish_demo_lesson(lesson_id):
+    if current_user.is_authenticated and current_user.role not in {"teacher", "admin"}:
+        abort(403)
     lesson = Lesson.query.get_or_404(lesson_id)
     finish_lesson(lesson)
     db.session.commit()

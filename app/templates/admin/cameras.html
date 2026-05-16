@@ -24,11 +24,10 @@
               class="camera-snapshot-video"
               src="{{ url_for('static', filename='videos/english_class_demo.mp4') }}"
               muted
+              autoplay
+              loop
               playsinline
-              preload="metadata"
-              data-camera-snapshot
-              data-state-url="{{ url_for('admin.classroom_5_camera_state') }}"
-              data-lag-seconds="30"
+              preload="auto"
             ></video>
           {% elif camera.display_mode == 'ip_camera' %}
             <img

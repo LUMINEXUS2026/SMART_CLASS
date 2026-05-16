@@ -18,7 +18,7 @@
         <span></span><span></span><span></span>
       </div>
 
-      <a class="side-brand" href="{% if current_user.is_authenticated and current_user.role == 'admin' %}{{ url_for('admin.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'teacher' %}{{ url_for('teacher.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'parent' %}{{ url_for('parent.dashboard') }}{% else %}{{ url_for('demo.home') }}{% endif %}">
+      <a class="side-brand" href="{% if current_user.is_authenticated and current_user.role == 'admin' %}{{ url_for('admin.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'teacher' %}{{ url_for('teacher.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'parent' %}{{ url_for('parent.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'student' %}{{ url_for('student.dashboard') }}{% else %}{{ url_for('demo.home') }}{% endif %}">
         <span class="brand-frame">
           <img class="brand-logo-photo" src="{{ url_for('static', filename='img/luminexus-logo.jpg') }}" alt="Luminexus">
         </span>
@@ -40,12 +40,17 @@
           <a class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" href="{{ url_for('admin.settings') }}"><span>⚙</span> Настройки</a>
         {% elif current_user.is_authenticated and current_user.role == "teacher" %}
           <a class="nav-item {% if request.endpoint == 'teacher.dashboard' %}active{% endif %}" href="{{ url_for('teacher.dashboard') }}"><span>▦</span> Обзор</a>
-          <a class="nav-item {% if request.endpoint == 'teacher.lesson_live' %}active{% endif %}" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id if lesson is defined else (lessons[0].id if lessons is defined and lessons else 1)) }}"><span>▭</span> Урок</a>
+          <a class="nav-item {% if request.endpoint in ['teacher.lesson_live', 'teacher.current_lesson'] %}active{% endif %}" href="{{ url_for('teacher.current_lesson') }}"><span>▭</span> Урок</a>
           <a class="nav-item {% if request.endpoint == 'teacher.analytics' %}active{% endif %}" href="{{ url_for('teacher.analytics') }}"><span>▥</span> Аналитика занятий</a>
           <a class="nav-item {% if request.endpoint == 'teacher.events' %}active{% endif %}" href="{{ url_for('teacher.events') }}"><span>▢</span> Нарушения дисциплины</a>
           <a class="nav-item {% if request.endpoint == 'teacher.lesson_plan' %}active{% endif %}" href="{{ url_for('teacher.lesson_plan') }}"><span>▤</span> План занятия</a>
         {% elif current_user.is_authenticated and current_user.role == "parent" %}
           <a class="nav-item {% if request.endpoint == 'parent.dashboard' %}active{% endif %}" href="{{ url_for('parent.dashboard') }}"><span>▦</span> Ребёнок</a>
+        {% elif current_user.is_authenticated and current_user.role == "student" %}
+          <a class="nav-item {% if request.endpoint == 'student.dashboard' %}active{% endif %}" href="{{ url_for('student.dashboard') }}"><span>▦</span> Вход</a>
+          {% if lesson is defined %}
+            <a class="nav-item {% if request.endpoint == 'student.lesson' %}active{% endif %}" href="{{ url_for('student.lesson', lesson_id=lesson.id) }}"><span>▭</span> Урок</a>
+          {% endif %}
         {% elif request.path.startswith('/demo') %}
           <a class="nav-item {% if request.endpoint == 'demo.home' %}active{% endif %}" href="{{ url_for('demo.home') }}"><span>▦</span> Обзор</a>
           <a class="nav-item {% if 'teacher' in request.path %}active{% endif %}" href="{{ url_for('demo.teacher_live', lesson_id=lesson.id if lesson is defined else 1) }}"><span>▭</span> Урок</a>

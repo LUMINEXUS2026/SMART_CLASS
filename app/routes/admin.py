@@ -171,13 +171,13 @@ def settings():
     policy = PolicySettings.query.filter_by(name="default").first()
     teachers = User.query.filter_by(role="teacher").all()
     groups = Group.query.order_by(Group.name.asc()).all()
-    return render_template("admin/settings.html", policy=policy, teachers=teachers, groups=groups, cameras=camera_feeds())
+    return render_template("admin/settings.html", policy=policy, teachers=teachers, groups=groups, cameras=classroom_camera_feeds())
 
 
 @admin_bp.get("/cameras")
 @roles_required("admin")
 def cameras():
-    return render_template("admin/cameras.html", cameras=camera_feeds(), discipline_events=discipline_events())
+    return render_template("admin/cameras.html", cameras=classroom_camera_feeds(), discipline_events=discipline_events())
 
 
 @admin_bp.post("/cameras/classroom-5/source")
@@ -224,6 +224,15 @@ def render_camera_detail(camera, camera_config):
         discipline_events=discipline_events(),
         analysis=lesson_analysis_data(),
     )
+
+
+def classroom_camera_feeds():
+    config = load_classroom_5_config()
+    source_type = config.get("source_type", "ip_camera")
+    feeds = camera_feeds()
+    classroom_feed = next((camera for camera in feeds if camera.display_mode == source_type), None)
+    closed_feeds = [camera for camera in feeds if camera.display_mode == "closed"]
+    return ([classroom_feed] if classroom_feed else []) + closed_feeds
 
 
 @admin_bp.get("/cameras/classroom-5/state")

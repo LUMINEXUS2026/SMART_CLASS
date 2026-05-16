@@ -105,7 +105,7 @@
         return;
       }
       const assigned = data?.textbook?.assigned_page_index;
-      if (mode === "textbook" && Number.isInteger(assigned) && assigned !== pageIndex) {
+      if (Number.isInteger(assigned) && assigned !== pageIndex) {
         turnTo(pageHref(assigned), assigned < pageIndex ? "prev" : "next");
       }
     } catch {

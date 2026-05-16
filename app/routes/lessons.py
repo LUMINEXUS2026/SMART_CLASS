@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, redirect, request, url_for
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Lesson, LessonParticipant, LessonTextbookState
+from app.models import Lesson, LessonParticipant, LessonTextbookState, Student
 from app.routes.guards import roles_required
 from app.services.event_service import create_event
 from app.services.lesson_service import finish_lesson, join_lesson
@@ -26,6 +26,11 @@ def create_lesson():
 @roles_required("student")
 def join(lesson_id):
     lesson = Lesson.query.get_or_404(lesson_id)
+    if lesson.status != "active":
+        return redirect(url_for("student.dashboard"))
+    student = Student.query.filter_by(user_id=current_user.id).first()
+    if lesson.group_id and (not student or student.group_id != lesson.group_id):
+        return redirect(url_for("student.dashboard"))
     participant = join_lesson(lesson, current_user)
     create_event(lesson.id, current_user.id, "student_arrived", "web", {"participant_id": participant.id})
     db.session.commit()
@@ -36,6 +41,8 @@ def join(lesson_id):
 @roles_required("teacher")
 def finish(lesson_id):
     lesson = Lesson.query.get_or_404(lesson_id)
+    if lesson.teacher_id != current_user.id:
+        return redirect(url_for("teacher.dashboard"))
     finish_lesson(lesson)
     db.session.commit()
     return redirect(url_for("reports.lesson_report", lesson_id=lesson.id))

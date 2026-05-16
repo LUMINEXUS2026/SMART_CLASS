@@ -7,7 +7,7 @@
     <p>{{ lesson.subject }} · урок активен</p>
   </div>
   <div class="actions">
-    <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=0) }}">Открыть учебник</a>
+    <a class="button" href="{{ url_for('textbook.page', lesson_id=lesson.id, page_index=(textbook_state.assigned_page_index if textbook_state else 0)) }}">Открыть учебник</a>
   </div>
 </section>
 <section class="panel">
