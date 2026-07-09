@@ -7,7 +7,8 @@
   <script>
     document.documentElement.dataset.theme = localStorage.getItem("educam-theme") || "dark";
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=logo-frame-6">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-fixes.css') }}?v=logo-frame-6">
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -18,9 +19,10 @@
       </div>
 
       <a class="side-brand" href="{% if current_user.is_authenticated and current_user.role == 'admin' %}{{ url_for('admin.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'teacher' %}{{ url_for('teacher.dashboard') }}{% elif current_user.is_authenticated and current_user.role == 'parent' %}{{ url_for('parent.dashboard') }}{% else %}{{ url_for('demo.home') }}{% endif %}">
-        <span class="brand-icon">◎</span>
+        <span class="brand-icon">
+          <img class="brand-mark" src="{{ url_for('static', filename='img/luminexus-brand-icon.png') }}?v=logo-frame-6" alt="Luminexus">
+        </span>
         <span>
-          <img class="brand-logo" src="{{ url_for('static', filename='img/luminexus-logo.svg') }}" alt="Luminexus">
           <strong>EduCam</strong>
           <small>Образовательная аналитика</small>
         </span>
@@ -37,7 +39,7 @@
           <a class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" href="{{ url_for('admin.settings') }}"><span>⚙</span> Настройки</a>
         {% elif current_user.is_authenticated and current_user.role == "teacher" %}
           <a class="nav-item {% if request.endpoint == 'teacher.dashboard' %}active{% endif %}" href="{{ url_for('teacher.dashboard') }}"><span>▦</span> Обзор</a>
-          <a class="nav-item {% if request.endpoint == 'teacher.lesson_live' %}active{% endif %}" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id if lesson is defined else (lessons[0].id if lessons is defined and lessons else 1)) }}"><span>▭</span> Видеонаблюдение</a>
+          <a class="nav-item {% if request.endpoint == 'teacher.lesson_live' %}active{% endif %}" href="{{ url_for('teacher.lesson_live', lesson_id=lesson.id if lesson is defined else (lessons[0].id if lessons is defined and lessons else 1)) }}"><span>▭</span> Урок</a>
           <a class="nav-item {% if request.endpoint == 'teacher.analytics' %}active{% endif %}" href="{{ url_for('teacher.analytics') }}"><span>▥</span> Аналитика занятий</a>
           <a class="nav-item {% if request.endpoint == 'teacher.events' %}active{% endif %}" href="{{ url_for('teacher.events') }}"><span>▢</span> Нарушения дисциплины</a>
           <a class="nav-item {% if request.endpoint == 'teacher.lesson_plan' %}active{% endif %}" href="{{ url_for('teacher.lesson_plan') }}"><span>▤</span> План занятия</a>
@@ -45,7 +47,7 @@
           <a class="nav-item {% if request.endpoint == 'parent.dashboard' %}active{% endif %}" href="{{ url_for('parent.dashboard') }}"><span>▦</span> Ребёнок</a>
         {% elif request.path.startswith('/demo') %}
           <a class="nav-item {% if request.endpoint == 'demo.home' %}active{% endif %}" href="{{ url_for('demo.home') }}"><span>▦</span> Обзор</a>
-          <a class="nav-item {% if 'teacher' in request.path %}active{% endif %}" href="{{ url_for('demo.teacher_live', lesson_id=lesson.id if lesson is defined else 1) }}"><span>▭</span> Видеонаблюдение</a>
+          <a class="nav-item {% if 'teacher' in request.path %}active{% endif %}" href="{{ url_for('demo.teacher_live', lesson_id=lesson.id if lesson is defined else 1) }}"><span>▭</span> Урок</a>
           <a class="nav-item" href="{{ url_for('demo.student_book', lesson_id=lesson.id if lesson is defined else 1, page_index=0) }}"><span>▤</span> Учебник</a>
         {% else %}
           <a class="nav-item active" href="{{ url_for('auth.login') }}"><span>▦</span> Вход</a>

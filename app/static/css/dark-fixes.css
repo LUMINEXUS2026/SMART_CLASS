@@ -1,0 +1,79 @@
+[data-theme="dark"] .lesson-row,
+[data-theme="dark"] .tab-strip,
+[data-theme="dark"] .tabbar,
+[data-theme="dark"] .mini-metrics div,
+[data-theme="dark"] .rule-row,
+[data-theme="dark"] .notice,
+[data-theme="dark"] .event-icon,
+[data-theme="dark"] .waveform,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .lesson-shell,
+[data-theme="dark"] .event-card {
+  background: #0f1630;
+  border-color: rgba(130, 152, 220, 0.22);
+  color: #eef3ff;
+}
+
+[data-theme="dark"] .lesson-row,
+[data-theme="dark"] .tab-strip,
+[data-theme="dark"] .tabbar {
+  background: linear-gradient(180deg, #111936, #0b1126);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .lesson-row strong,
+[data-theme="dark"] .lesson-row span,
+[data-theme="dark"] .lesson-row small,
+[data-theme="dark"] .tabbar a,
+[data-theme="dark"] .tabbar button,
+[data-theme="dark"] .tab-strip a,
+[data-theme="dark"] .tab-strip button {
+  color: #eef3ff;
+}
+
+[data-theme="dark"] .button.secondary,
+[data-theme="dark"] .btn.ghost,
+[data-theme="dark"] .lesson-row .button,
+[data-theme="dark"] .tabbar .active,
+[data-theme="dark"] .tab-strip .active {
+  background: #182243;
+  color: #cfd8ff;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+[data-theme="dark"] .button.secondary:hover,
+[data-theme="dark"] .btn.ghost:hover,
+[data-theme="dark"] .lesson-row .button:hover {
+  background: #24305a;
+  color: #ffffff;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #0b1126;
+  border-color: rgba(130, 152, 220, 0.28);
+  color: #eef3ff;
+}
+
+[data-theme="dark"] .donut::after {
+  background: #0f1630;
+}
+
+.lesson-live-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 18px;
+  align-items: start;
+}
+
+.lesson-main-column {
+  display: grid;
+  gap: 18px;
+}
+
+@media (max-width: 980px) {
+  .lesson-live-layout {
+    grid-template-columns: 1fr;
+  }
+}

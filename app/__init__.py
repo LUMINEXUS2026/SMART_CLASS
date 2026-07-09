@@ -15,6 +15,21 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
+    @app.template_filter("clean_text")
+    def clean_text(value, fallback=""):
+        text = str(value or "")
+        if "???" in text or text.count("?") >= 3:
+            return fallback
+        if any(marker in text for marker in ("Р", "С", "Ð", "Ñ")):
+            for encoding in ("cp1251", "latin1"):
+                try:
+                    repaired = text.encode(encoding).decode("utf-8")
+                except UnicodeError:
+                    continue
+                if repaired and repaired.count("?") < text.count("?"):
+                    return repaired
+        return text
+
     from .models import User
 
     @login_manager.user_loader

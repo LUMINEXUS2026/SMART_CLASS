@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from app.extensions import db
 from app.models import LessonParticipant
+from app.services.attendance_service import attendance_status_for, create_attendance_event
 from app.services.event_service import create_event
 
 
@@ -14,7 +15,10 @@ def join_lesson(lesson, student):
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     minutes_since_start = (now - lesson.starts_at).total_seconds() / 60
-    if minutes_since_start > lesson.late_after_minutes:
+    status = attendance_status_for(lesson, now)
+    participant.attendance_status = status
+    create_attendance_event(student.id, lesson.id, status, "login", timestamp=now)
+    if status == "late":
         create_event(lesson.id, student.id, "student_late", "web", {"minutes_since_start": round(minutes_since_start)})
     return participant
 
@@ -25,4 +29,3 @@ def finish_lesson(lesson):
     for participant in lesson.participants:
         if participant.left_at is None:
             participant.left_at = lesson.ends_at
-
