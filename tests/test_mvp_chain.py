@@ -1,4 +1,5 @@
 import unittest
+import json
 from datetime import datetime
 
 from werkzeug.security import generate_password_hash
@@ -101,6 +102,40 @@ class MvpChainTest(unittest.TestCase):
         warning = LessonEvent.query.filter_by(event_type="warning").one()
         self.assertEqual(detected.review_status, "pending")
         self.assertEqual(warning.review_status, "pending")
+
+    def test_camera_confidence_boundary_on_both_api_paths(self):
+        student = User.query.filter_by(email="student@example.com").one()
+        lesson = Lesson.query.filter_by(title="English").one()
+        for confidence, expected_status in [(0.749, "pending"), (0.75, "confirmed"), (0.751, "confirmed")]:
+            with self.subTest(confidence=confidence):
+                ai_response = self.client.post(
+                    "/api/ai/detections",
+                    headers={"X-Camera-Token": "test-camera-token"},
+                    json={"lesson_id": lesson.id, "user_id": student.id, "detected": True,
+                          "confidence": confidence},
+                )
+                self.assertEqual(ai_response.status_code, 200)
+                ai_event = db.session.get(LessonEvent, ai_response.get_json()["event_id"])
+                camera_response = self.client.post(
+                    "/api/camera/events",
+                    headers={"X-Camera-Token": "test-camera-token"},
+                    json={"lesson_id": lesson.id, "student_name": student.name,
+                          "event_type": "student_arrived", "payload": {"confidence": confidence,
+                          "manual_review_required": False}},
+                )
+                self.assertEqual(camera_response.status_code, 200)
+                camera_event = db.session.get(LessonEvent, camera_response.get_json()["event_id"])
+                for event in (ai_event, camera_event):
+                    self.assertEqual(event.review_status, expected_status)
+                    self.assertEqual(json.loads(event.payload_json)["manual_review_required"],
+                                     expected_status == "pending")
+
+        missing_response = self.client.post(
+            "/api/camera/events", headers={"X-Camera-Token": "test-camera-token"},
+            json={"lesson_id": lesson.id, "student_name": student.name, "event_type": "student_arrived"},
+        )
+        missing_event = db.session.get(LessonEvent, missing_response.get_json()["event_id"])
+        self.assertEqual(missing_event.review_status, "pending")
 
     def test_textbook_activity_creates_unified_event(self):
         self.client.post(

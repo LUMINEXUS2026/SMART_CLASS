@@ -5,11 +5,9 @@ from flask import Blueprint, current_app, jsonify, request
 from app.extensions import db
 from app.models import Lesson, LessonParticipant
 from app.services.event_service import create_event
+from camera_service.confidence_policy import requires_manual_review
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
-
-LOW_CONFIDENCE_THRESHOLD = 0.65
-
 
 @ai_bp.post("/detections")
 def detections():
@@ -22,7 +20,7 @@ def detections():
     user_id = data.get("user_id") or data.get("student_id")
     confidence = float(data.get("confidence", 0))
     detected = bool(data.get("detected", False))
-    manual_review_required = confidence < LOW_CONFIDENCE_THRESHOLD
+    manual_review_required = requires_manual_review(confidence)
     status = "detected" if detected else "absent"
 
     if user_id:
