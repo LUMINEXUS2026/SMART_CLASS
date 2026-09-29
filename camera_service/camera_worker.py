@@ -11,6 +11,7 @@ from pathlib import Path
 import cv2
 
 from event_sender import EventSender
+from confidence_policy import face_confidence_score, requires_manual_review
 from face_recognition import FaceRecognitionAdapter
 from object_detection import Detection, YoloObjectDetector
 
@@ -232,7 +233,11 @@ def main():
                 behavior_tracker,
             )
 
-        for name in known_names:
+        for face in faces:
+            if not face.name:
+                continue
+            name = face.name
+            confidence = face_confidence_score(face.confidence, args.face_threshold)
             maybe_send(
                 args,
                 sender,
@@ -240,7 +245,8 @@ def main():
                 event_type="student_arrived",
                 student_name=name,
                 key=("student_arrived", name),
-                payload={"camera": args.camera_name, "recognition": "face_lbph"},
+                payload={"camera": args.camera_name, "recognition": "face_lbph", "confidence": confidence,
+                         "manual_review_required": requires_manual_review(confidence)},
             )
 
         if people and not known_names:
@@ -408,13 +414,6 @@ def estimate_student_attention(student: dict, teacher: dict | None, frame_width:
     occlusion_penalty = 16 if is_occluded_by_teacher(student["box"], teacher) else 0
     attention = 62 + confidence * 22 + seated_bonus + size_bonus - occlusion_penalty
     return int(max(35, min(96, attention)))
-
-
-def face_confidence_score(raw_confidence: float, threshold: float) -> float:
-    if raw_confidence >= 900:
-        return 0.0
-    score = 1.0 - min(raw_confidence / max(threshold, 1.0), 1.0)
-    return round(max(0.0, score), 3)
 
 
 def write_state(

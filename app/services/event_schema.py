@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from camera_service.confidence_policy import requires_manual_review
 
 SCHEMA_VERSION = "smart-class.event.v1"
 
@@ -106,6 +107,10 @@ def normalize_event_payload(
     confidence = payload.get("confidence")
     status = payload.get("status") or payload.get("attendance_status") or "observed"
 
+    manual_review_required = bool(payload.get("manual_review_required", False))
+    if source in {"camera", "ai"} and event_type in {"student_arrived", "student_late", "detected"}:
+        manual_review_required |= requires_manual_review(confidence)
+
     return {
         "schema": SCHEMA_VERSION,
         "event_type": event_type,
@@ -116,6 +121,6 @@ def normalize_event_payload(
         "source": source,
         "status": status,
         "confidence": confidence,
-        "manual_review_required": bool(payload.get("manual_review_required", False)),
+        "manual_review_required": manual_review_required,
         "data": payload,
     }
